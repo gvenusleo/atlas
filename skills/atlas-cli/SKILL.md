@@ -1,5 +1,5 @@
 ---
-name: atlas-cli
+name: Atlas CLI
 description: 在任意工作目录下调用已安装的 `atlas` 命令行工具，访问基于 PocketBase 的 Atlas 能力。当用户提出记账、记一笔、添加收入、添加支出、查询账目、查询流水、查看消费、查看收支、统计收入支出、分析分类占比、删除或修改记账记录等需求时应使用此 skill；当 Codex 需要登录 PocketBase、查看 Atlas 当前有哪些模块、调用某个模块命令，或从其他 skill/agent 中以稳定的 `--output json` 方式调用 Atlas 时，也应使用此 skill。把 `txns` 视为当前已实现模块，但不要假设它永远是唯一模块。
 ---
 
