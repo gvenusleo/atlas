@@ -45,10 +45,10 @@ pub fn print_txn(record: &TxnRecord, output: OutputFormat) {
     println!("created: {}", record.created);
     println!("updated: {}", record.updated);
 
-    if let Some(note) = record.note.as_deref() {
-        if !note.is_empty() {
-            println!("note: {note}");
-        }
+    if let Some(note) = record.note.as_deref()
+        && !note.is_empty()
+    {
+        println!("note: {note}");
     }
 }
 
