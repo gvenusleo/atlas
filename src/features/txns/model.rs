@@ -1,7 +1,9 @@
 use std::fmt;
 use std::str::FromStr;
 
-use chrono::{FixedOffset, Local, LocalResult, NaiveDate, NaiveDateTime, Offset, TimeZone};
+use chrono::{
+    FixedOffset, Local, LocalResult, NaiveDate, NaiveDateTime, Offset, SecondsFormat, TimeZone, Utc,
+};
 use clap::ValueEnum;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -266,7 +268,10 @@ impl YearMonth {
         };
         let end = build_offset_datetime(offset, next_year, next_month, 1, 0, 0, 0)?;
 
-        Ok((start.to_rfc3339(), end.to_rfc3339()))
+        Ok((
+            format_pocketbase_datetime_utc(start),
+            format_pocketbase_datetime_utc(end),
+        ))
     }
 }
 
@@ -319,33 +324,19 @@ pub fn parse_positive_amount(raw: &str) -> Result<Decimal, AtlasError> {
 }
 
 pub fn normalize_occurred(raw: &str) -> Result<String, AtlasError> {
-    parse_datetime(raw).map(|value| value.to_rfc3339())
+    normalize_pocketbase_datetime(raw)
 }
 
 pub fn normalize_analyze_start(raw: &str) -> Result<String, AtlasError> {
-    if let Ok(date) = NaiveDate::parse_from_str(raw, "%Y-%m-%d") {
-        let naive = date
-            .and_hms_opt(0, 0, 0)
-            .ok_or_else(|| AtlasError::TimeParse("无法将日期转换为本地时间".to_owned()))?;
-        return localize_naive(naive).map(|value| value.to_rfc3339());
-    }
-
-    normalize_occurred(raw)
+    normalize_day_boundary(raw, 0, 0, 0, 0)
 }
 
 pub fn normalize_analyze_end(raw: &str) -> Result<String, AtlasError> {
-    if let Ok(date) = NaiveDate::parse_from_str(raw, "%Y-%m-%d") {
-        let naive = date
-            .and_hms_opt(23, 59, 59)
-            .ok_or_else(|| AtlasError::TimeParse("无法将日期转换为本地时间".to_owned()))?;
-        return localize_naive(naive).map(|value| value.to_rfc3339());
-    }
-
-    normalize_occurred(raw)
+    normalize_day_boundary(raw, 23, 59, 59, 999)
 }
 
 pub fn current_occurred() -> String {
-    Local::now().fixed_offset().to_rfc3339()
+    format_pocketbase_datetime_utc(Local::now().fixed_offset())
 }
 
 pub fn format_amount(amount: Decimal) -> String {
@@ -354,6 +345,14 @@ pub fn format_amount(amount: Decimal) -> String {
 
 fn parse_datetime(raw: &str) -> Result<chrono::DateTime<FixedOffset>, AtlasError> {
     if let Ok(value) = chrono::DateTime::parse_from_rfc3339(raw) {
+        return Ok(value);
+    }
+
+    if let Some(candidate) = raw
+        .strip_suffix('Z')
+        .map(|value| format!("{}Z", value.replacen(' ', "T", 1)))
+        && let Ok(value) = chrono::DateTime::parse_from_rfc3339(&candidate)
+    {
         return Ok(value);
     }
 
@@ -395,6 +394,34 @@ fn build_offset_datetime(
         .ok_or_else(|| AtlasError::TimeParse("无法构造月份筛选时间范围".to_owned()))
 }
 
+fn normalize_pocketbase_datetime(raw: &str) -> Result<String, AtlasError> {
+    parse_datetime(raw).map(format_pocketbase_datetime_utc)
+}
+
+fn normalize_day_boundary(
+    raw: &str,
+    hour: u32,
+    minute: u32,
+    second: u32,
+    millisecond: u32,
+) -> Result<String, AtlasError> {
+    if let Ok(date) = NaiveDate::parse_from_str(raw, "%Y-%m-%d") {
+        let naive = date
+            .and_hms_milli_opt(hour, minute, second, millisecond)
+            .ok_or_else(|| AtlasError::TimeParse("无法将日期转换为本地时间".to_owned()))?;
+        return localize_naive(naive).map(format_pocketbase_datetime_utc);
+    }
+
+    normalize_pocketbase_datetime(raw)
+}
+
+fn format_pocketbase_datetime_utc(value: chrono::DateTime<FixedOffset>) -> String {
+    value
+        .with_timezone(&Utc)
+        .to_rfc3339_opts(SecondsFormat::Millis, true)
+        .replace('T', " ")
+}
+
 fn quote_filter_value(value: &str) -> String {
     let escaped = value.replace('\\', "\\\\").replace('"', "\\\"");
     format!("\"{escaped}\"")
@@ -402,9 +429,13 @@ fn quote_filter_value(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    use chrono::{NaiveDate, NaiveDateTime};
+
     use super::{
-        AnalyzeTxnsQuery, ListTxnsQuery, TxnCategory, TxnKind, YearMonth, normalize_analyze_end,
-        normalize_occurred, parse_positive_amount, validate_kind_and_category,
+        AnalyzeTxnsQuery, ListTxnsQuery, TxnCategory, TxnKind, YearMonth,
+        format_pocketbase_datetime_utc, localize_naive, normalize_analyze_end,
+        normalize_analyze_start, normalize_occurred, parse_positive_amount,
+        validate_kind_and_category,
     };
 
     #[test]
@@ -423,7 +454,7 @@ mod tests {
     #[test]
     fn normalizes_date_only_input() {
         let occurred = normalize_occurred("2026-03-29").unwrap();
-        assert!(occurred.starts_with("2026-03-29T00:00:00"));
+        assert_eq!(occurred, expected_local_datetime(2026, 3, 29, 0, 0, 0, 0));
     }
 
     #[test]
@@ -439,16 +470,38 @@ mod tests {
 
         let filter = query.filter().unwrap().unwrap();
 
-        assert!(filter.contains("occurred >="));
-        assert!(filter.contains("occurred <"));
+        assert!(filter.contains(&format!(
+            "occurred >= \"{}\"",
+            expected_local_datetime(2026, 3, 1, 0, 0, 0, 0)
+        )));
+        assert!(filter.contains(&format!(
+            "occurred < \"{}\"",
+            expected_local_datetime(2026, 4, 1, 0, 0, 0, 0)
+        )));
         assert!(filter.contains("kind = \"支出\""));
         assert!(filter.contains("category = \"餐饮\""));
     }
 
     #[test]
+    fn normalize_analyze_start_converts_date_only_to_utc_pocketbase_format() {
+        let occurred = normalize_analyze_start("2026-03-30").unwrap();
+        assert_eq!(occurred, expected_local_datetime(2026, 3, 30, 0, 0, 0, 0));
+    }
+
+    #[test]
     fn normalize_analyze_end_expands_date_only_to_day_end() {
-        let occurred = normalize_analyze_end("2026-03-29").unwrap();
-        assert!(occurred.starts_with("2026-03-29T23:59:59"));
+        let occurred = normalize_analyze_end("2026-03-30").unwrap();
+        assert_eq!(
+            occurred,
+            expected_local_datetime(2026, 3, 30, 23, 59, 59, 999)
+        );
+    }
+
+    #[test]
+    fn normalize_analyze_datetime_input_to_utc_pocketbase_format() {
+        let expected = expected_local_datetime(2026, 3, 30, 0, 0, 0, 0);
+        let occurred = normalize_analyze_start("2026-03-30T00:00:00+08:00").unwrap();
+        assert_eq!(occurred, expected);
     }
 
     #[test]
@@ -459,5 +512,43 @@ mod tests {
         );
 
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn analyze_query_accepts_pocketbase_datetime_format() {
+        let result = AnalyzeTxnsQuery::new(
+            normalize_analyze_start("2026-03-30").unwrap(),
+            normalize_analyze_end("2026-03-30").unwrap(),
+        );
+
+        assert!(result.is_ok());
+    }
+
+    fn expected_local_datetime(
+        year: i32,
+        month: u32,
+        day: u32,
+        hour: u32,
+        minute: u32,
+        second: u32,
+        millisecond: u32,
+    ) -> String {
+        let naive = build_naive_datetime(year, month, day, hour, minute, second, millisecond);
+        let localized = localize_naive(naive).unwrap();
+        format_pocketbase_datetime_utc(localized)
+    }
+
+    fn build_naive_datetime(
+        year: i32,
+        month: u32,
+        day: u32,
+        hour: u32,
+        minute: u32,
+        second: u32,
+        millisecond: u32,
+    ) -> NaiveDateTime {
+        let date = NaiveDate::from_ymd_opt(year, month, day).unwrap();
+        date.and_hms_milli_opt(hour, minute, second, millisecond)
+            .unwrap()
     }
 }
