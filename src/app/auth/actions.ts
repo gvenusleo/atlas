@@ -7,7 +7,12 @@ import {
   type RegisterFormState,
   registerFormSchema,
 } from "@/lib/auth/forms";
-import { signInWithPassword, signUpWithPassword } from "@/lib/auth/service";
+import {
+  refreshSession,
+  signInWithPassword,
+  signOut,
+  signUpWithPassword,
+} from "@/lib/auth/service";
 
 function readFormValue(formData: FormData, key: string, trim = true) {
   const value = formData.get(key);
@@ -58,6 +63,7 @@ export async function loginWithPasswordAction(
       };
     }
   } catch (error) {
+    console.error("loginWithPasswordAction failed", error);
     unstable_rethrow(error);
 
     return {
@@ -117,6 +123,7 @@ export async function registerWithPasswordAction(
       };
     }
   } catch (error) {
+    console.error("registerWithPasswordAction failed", error);
     unstable_rethrow(error);
 
     return {
@@ -128,4 +135,31 @@ export async function registerWithPasswordAction(
   }
 
   redirect("/");
+}
+
+export async function logoutAction() {
+  try {
+    await signOut();
+  } catch (error) {
+    console.error("logoutAction failed", error);
+    unstable_rethrow(error);
+    throw error;
+  }
+
+  redirect("/auth");
+}
+
+export async function refreshSessionAction() {
+  try {
+    return {
+      ok: await refreshSession(),
+    };
+  } catch (error) {
+    console.error("refreshSessionAction failed", error);
+    unstable_rethrow(error);
+
+    return {
+      ok: false,
+    };
+  }
 }

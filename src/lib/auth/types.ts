@@ -3,7 +3,6 @@ export const authModes = ["login", "register"] as const;
 export type AuthMode = (typeof authModes)[number];
 
 export type AuthFailureCode =
-  | "AUTH_NOT_CONFIGURED"
   | "EMAIL_ALREADY_EXISTS"
   | "INVALID_CREDENTIALS"
   | "UNKNOWN";
