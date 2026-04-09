@@ -8,6 +8,13 @@
       "when": 1775638955211,
       "tag": "0000_fair_korvac",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775719569730,
+      "tag": "0001_chubby_sway",
+      "breakpoints": true
     }
   ]
 }

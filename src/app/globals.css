@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@heroui/styles";
+@import "vditor/dist/index.css";
 
 /*
  * HeroUI Theme Customization
@@ -103,6 +104,55 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), sans-serif;
+}
+
+.atlas-vditor-host,
+.atlas-vditor-host > .vditor,
+.atlas-vditor-host > .vditor > .vditor-content {
+  min-height: 420px;
+}
+
+.atlas-vditor-host,
+.atlas-vditor-host > .vditor {
+  height: 100%;
+  width: 100%;
+}
+
+.atlas-vditor-host > .vditor > .vditor-content {
+  height: 100%;
+}
+
+.atlas-vditor-host {
+  flex: 1;
+  min-width: 0;
+}
+
+.atlas-vditor-host > .vditor {
+  --border-color: color-mix(in oklch, var(--border) 76%, transparent);
+  --panel-background-color: var(--surface);
+  --toolbar-background-color: var(--surface-secondary);
+  --toolbar-icon-color: var(--muted);
+  --toolbar-icon-hover-color: var(--foreground);
+  --textarea-background-color: var(--surface);
+  --textarea-text-color: var(--foreground);
+
+  overflow: hidden;
+  border-radius: calc(var(--radius) + 0.25rem);
+}
+
+.atlas-vditor-host > .vditor > .vditor-toolbar {
+  padding-inline: 0.25rem;
+}
+
+.atlas-vditor-host .vditor-ir,
+.atlas-vditor-host .vditor-preview,
+.atlas-vditor-host .vditor-sv,
+.atlas-vditor-host .vditor-wysiwyg {
+  background-color: var(--surface);
+}
+
+.atlas-vditor-host .vditor-reset {
+  padding: 1rem 1.25rem 2rem;
 }
 
 .auth-card-shell {
