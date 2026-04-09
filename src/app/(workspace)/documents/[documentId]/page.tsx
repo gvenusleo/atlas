@@ -24,5 +24,11 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
     notFound();
   }
 
-  return <DocumentEditorShell document={document} revisions={revisions} />;
+  return (
+    <DocumentEditorShell
+      key={document.id}
+      document={document}
+      revisions={revisions}
+    />
+  );
 }

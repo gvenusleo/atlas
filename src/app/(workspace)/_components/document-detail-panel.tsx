@@ -1,9 +1,18 @@
 "use client";
 
-import { Button, ScrollShadow, Tabs } from "@heroui/react";
+import { HistoryIcon, ListTreeIcon, RotateCcwIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { DocumentRevisionItem } from "@/lib/documents/types";
-import { HistoryIcon, RefreshIcon, StructureIcon } from "./icons";
 
 type DocumentDetailPanelProps = {
   onRenderOutline: (target: HTMLElement) => void;
@@ -51,78 +60,96 @@ export function DocumentDetailPanel({
   }, [onRenderOutline, selectedTab]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="space-y-1 pb-4">
-        <h2 className="text-base font-semibold text-foreground">文档详情</h2>
-        <p className="text-sm text-muted">查看结构与版本</p>
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <div className="space-y-1">
+        <h2 className="text-sm font-medium text-foreground">文档详情</h2>
+        <p className="text-xs text-muted-foreground">大纲与历史版本</p>
       </div>
 
       <Tabs
-        className="flex min-h-0 flex-1 flex-col"
-        selectedKey={selectedTab}
-        onSelectionChange={(key) => setSelectedTab(String(key))}
+        className="min-h-0 flex-1"
+        onValueChange={(value) => setSelectedTab(String(value))}
+        value={selectedTab}
       >
-        <Tabs.ListContainer className="pb-3">
-          <Tabs.List aria-label="文档详情标签">
-            <Tabs.Tab id="outline">
-              <StructureIcon className="size-4" />
-              大纲
-            </Tabs.Tab>
-            <Tabs.Tab id="history">
-              <HistoryIcon className="size-4" />
-              历史
-            </Tabs.Tab>
-          </Tabs.List>
-        </Tabs.ListContainer>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="outline">
+            <ListTreeIcon data-icon="inline-start" />
+            大纲
+          </TabsTrigger>
+          <TabsTrigger value="history">
+            <HistoryIcon data-icon="inline-start" />
+            历史
+          </TabsTrigger>
+        </TabsList>
 
-        <Tabs.Panel className="min-h-0 flex-1 pt-1" id="outline">
-          <ScrollShadow className="h-full pr-1" hideScrollBar size={36}>
-            <div className="min-h-full text-sm">
+        <TabsContent className="mt-4 min-h-0 flex-1" value="outline">
+          <ScrollArea className="h-full pr-3">
+            <div className="atlas-outline min-h-full text-sm">
               <div ref={outlineRef} />
               {isOutlineEmpty ? (
-                <p className="py-2 leading-6 text-sm text-muted">
-                  当前文档还没有可显示的大纲。
-                </p>
+                <Empty className="min-h-[220px] border border-dashed px-4">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <ListTreeIcon />
+                    </EmptyMedia>
+                    <EmptyTitle>暂无大纲</EmptyTitle>
+                    <EmptyDescription>
+                      添加标题后会自动生成当前文档结构。
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
               ) : null}
             </div>
-          </ScrollShadow>
-        </Tabs.Panel>
+          </ScrollArea>
+        </TabsContent>
 
-        <Tabs.Panel className="min-h-0 flex-1 pt-1" id="history">
-          <ScrollShadow className="h-full pr-1" hideScrollBar size={36}>
-            <div className="space-y-4">
-              {revisions.length > 0 ? (
-                revisions.map((revision) => (
+        <TabsContent className="mt-4 min-h-0 flex-1" value="history">
+          <ScrollArea className="h-full pr-3">
+            {revisions.length > 0 ? (
+              <div className="space-y-4">
+                {revisions.map((revision) => (
                   <div
                     key={revision.id}
-                    className="border-b border-black/5 pb-4 last:border-0 last:pb-0"
+                    className="space-y-3 border-b pb-4 last:border-0 last:pb-0"
                   >
-                    <p className="text-sm font-medium text-foreground">
-                      {revision.titleSnapshot}
-                    </p>
-                    <p className="mt-1 text-sm text-muted">
-                      {getRevisionSourceLabel(revision.source)} ·{" "}
-                      {formatRevisionTime(revision.createdAt)}
-                    </p>
-                    <div className="mt-3">
-                      <Button
-                        isPending={restorePendingRevisionId === revision.id}
-                        size="sm"
-                        variant="secondary"
-                        onPress={() => onRestoreRevision(revision.id)}
-                      >
-                        <RefreshIcon className="size-4" />
-                        恢复到此版本
-                      </Button>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-foreground">
+                        {revision.titleSnapshot}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {getRevisionSourceLabel(revision.source)} ·{" "}
+                        {formatRevisionTime(revision.createdAt)}
+                      </p>
                     </div>
+                    <Button
+                      disabled={restorePendingRevisionId === revision.id}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onRestoreRevision(revision.id)}
+                    >
+                      <RotateCcwIcon data-icon="inline-start" />
+                      {restorePendingRevisionId === revision.id
+                        ? "恢复中"
+                        : "恢复到此版本"}
+                    </Button>
                   </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted">当前文档还没有历史版本。</p>
-              )}
-            </div>
-          </ScrollShadow>
-        </Tabs.Panel>
+                ))}
+              </div>
+            ) : (
+              <Empty className="min-h-[220px] border border-dashed px-4">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <HistoryIcon />
+                  </EmptyMedia>
+                  <EmptyTitle>暂无历史版本</EmptyTitle>
+                  <EmptyDescription>
+                    自动保存达到快照条件后会显示在这里。
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            )}
+          </ScrollArea>
+        </TabsContent>
       </Tabs>
     </div>
   );

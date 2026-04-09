@@ -4,7 +4,7 @@
 
 Atlas is an all-in-one platform for knowledge management and AI collaboration.
 
-This repository is the early foundation of the product. It currently contains the app scaffold, base tooling, and project documentation; the main product modules are still under construction.
+This repository is the active product foundation. It already includes auth, a protected personal workspace, and a Markdown editing flow, while broader knowledge and AI modules are still being built.
 
 ## What Atlas Is For
 
@@ -14,9 +14,10 @@ This repository is the early foundation of the product. It currently contains th
 
 ## Current Status
 
-- The project is based on Next.js App Router, React, TypeScript, and Bun.
-- Core infrastructure and repo conventions are being established.
-- Database integration, editor integration, and product workflows are still being implemented.
+- The app runs on Next.js App Router, React 19, TypeScript, and Bun.
+- UI uses shadcn/ui with the official `base` preset workflow and generated components managed from `components.json`.
+- Auth is backed by PostgreSQL and Drizzle with persistent database sessions.
+- The current homepage is a protected Markdown workspace with Vditor, document tree management, autosave, revisions, and outline browsing.
 
 ## Getting Started
 
@@ -49,9 +50,12 @@ bun run format
 ```text
 .
 ├── src/app/           # Next.js App Router entry
+├── src/components/    # Shared UI and app-level composition
+├── src/lib/           # Auth, database, documents, and domain services
 ├── public/            # Static assets
 ├── AGENTS.md          # Project-specific implementation guidance
 ├── biome.json         # Linting and formatting config
+├── components.json    # shadcn registry configuration
 ├── next.config.ts     # Next.js config
 ├── package.json       # Scripts and dependencies
 └── tsconfig.json      # TypeScript config
@@ -60,4 +64,4 @@ bun run format
 ## Notes
 
 - `AGENTS.md` contains project-specific implementation guidance for coding agents and repo automation.
-- The current landing page is still the default starter UI and does not represent the final product direction.
+- Generated shadcn primitives in `src/components/ui/*` should be added through the official CLI and treated as registry source, not hand-maintained custom components.

@@ -1,6 +1,6 @@
 "use client";
 
-import { Alert, Button, Card, Drawer, Input } from "@heroui/react";
+import { CircleAlertIcon, PanelRightIcon, SaveIcon } from "lucide-react";
 import {
   startTransition,
   useEffect,
@@ -8,6 +8,18 @@ import {
   useRef,
   useState,
 } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   DOCUMENT_REVISION_INTERVAL_MS,
   type DocumentEditorPayload,
@@ -18,7 +30,6 @@ import {
   saveDocumentDraftAction,
 } from "../actions";
 import { DocumentDetailPanel } from "./document-detail-panel";
-import { PanelRightIcon } from "./icons";
 import { VditorEditor, type VditorEditorHandle } from "./vditor-editor";
 
 type DocumentEditorShellProps = {
@@ -33,6 +44,18 @@ function formatUpdatedAt(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function getSaveStateLabel(saveState: SaveState) {
+  if (saveState === "saving") {
+    return "保存中";
+  }
+
+  if (saveState === "error") {
+    return "保存失败";
+  }
+
+  return "已保存";
 }
 
 export function DocumentEditorShell({
@@ -60,7 +83,7 @@ export function DocumentEditorShell({
   const [restorePendingRevisionId, setRestorePendingRevisionId] = useState<
     string | null
   >(null);
-  const [isDesktopDetailOpen, setDesktopDetailOpen] = useState(false);
+  const [isDesktopDetailOpen, setDesktopDetailOpen] = useState(true);
   const [isMobileDetailOpen, setMobileDetailOpen] = useState(false);
 
   const persistDraft = useEffectEvent(async (forceRevision: boolean) => {
@@ -116,7 +139,7 @@ export function DocumentEditorShell({
 
     if (result.revisionCreated && result.latestRevision) {
       const latestRevision = result.latestRevision;
-      latestRevisionAtRef.current = Date.parse(result.latestRevision.createdAt);
+      latestRevisionAtRef.current = Date.parse(latestRevision.createdAt);
       setRevisions((current) => [
         latestRevision,
         ...current.filter((item) => item.id !== latestRevision.id),
@@ -216,72 +239,93 @@ export function DocumentEditorShell({
 
   return (
     <>
-      <div className="flex min-h-0 flex-1 flex-col gap-6 p-4 sm:p-6 xl:flex-row xl:gap-8">
-        <div className="flex min-h-0 flex-1 xl:pr-2">
-          <div className="mx-auto flex min-h-0 w-full max-w-[1100px]">
-            <Card className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
-              <Card.Header className="flex-col items-stretch gap-4 border-b border-black/5">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
-                    <span>
-                      {saveState === "saving"
-                        ? "保存中"
-                        : saveState === "error"
-                          ? "保存失败"
-                          : "已保存"}
+      <div className="flex min-h-0 flex-1 flex-col px-4 py-4 sm:px-6 lg:px-8">
+        <div className="flex min-h-0 flex-1 flex-col gap-6 xl:flex-row xl:items-stretch">
+          <section className="flex min-h-0 flex-1">
+            <div className="mx-auto flex min-h-0 w-full max-w-[1120px] flex-col gap-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                    Document
+                  </p>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5">
+                      <SaveIcon className="size-3.5" />
+                      {getSaveStateLabel(saveState)}
                     </span>
                     <span>最近更新：{formatUpdatedAt(updatedAt)}</span>
                     <span>历史版本：{revisions.length}</span>
                   </div>
-                  <Button size="sm" variant="ghost" onPress={openDetailPanel}>
-                    <PanelRightIcon className="size-4" />
-                    大纲与历史
-                  </Button>
                 </div>
+                <Button size="sm" variant="outline" onClick={openDetailPanel}>
+                  <PanelRightIcon data-icon="inline-start" />
+                  大纲与历史
+                </Button>
+              </div>
 
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted">标题</p>
-                  <Input
-                    aria-label="文档标题"
-                    fullWidth
-                    placeholder="无标题文档"
-                    value={title}
-                    variant="primary"
-                    onChange={(event) => setTitle(event.target.value)}
-                  />
-                </div>
-              </Card.Header>
+              <Card className="min-h-0 flex-1">
+                <CardHeader className="gap-4 border-b">
+                  <div className="space-y-2">
+                    <Label htmlFor="document-title">标题</Label>
+                    <Input
+                      id="document-title"
+                      placeholder="无标题文档"
+                      value={title}
+                      onChange={(event) => setTitle(event.target.value)}
+                    />
+                  </div>
+                </CardHeader>
 
-              <Card.Content className="flex min-h-0 flex-1 flex-col gap-4 p-5">
-                {saveError ? (
-                  <Alert status="danger">
-                    <Alert.Indicator />
-                    <Alert.Content>
-                      <Alert.Title>自动保存失败</Alert.Title>
-                      <Alert.Description>{saveError}</Alert.Description>
-                    </Alert.Content>
-                  </Alert>
-                ) : null}
+                <CardContent className="flex min-h-0 flex-1 flex-col gap-4 pb-4">
+                  {saveError ? (
+                    <Alert variant="destructive">
+                      <CircleAlertIcon className="size-4" />
+                      <AlertTitle>自动保存失败</AlertTitle>
+                      <AlertDescription>{saveError}</AlertDescription>
+                    </Alert>
+                  ) : null}
 
-                <div className="min-h-[calc(100dvh-280px)] flex-1">
-                  <VditorEditor
-                    ref={editorRef}
-                    value={contentMarkdown}
-                    onBlur={(nextValue) => {
-                      setContentMarkdown(nextValue);
-                      flushDraft();
-                    }}
-                    onChange={(nextValue) => setContentMarkdown(nextValue)}
-                    onReady={() => setEditorReady(true)}
-                  />
-                </div>
-              </Card.Content>
-            </Card>
-          </div>
+                  <div className="min-h-[calc(100dvh-18rem)] flex-1">
+                    <VditorEditor
+                      ref={editorRef}
+                      value={contentMarkdown}
+                      onBlur={(nextValue) => {
+                        setContentMarkdown(nextValue);
+                        flushDraft();
+                      }}
+                      onChange={(nextValue) => setContentMarkdown(nextValue)}
+                      onReady={() => setEditorReady(true)}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+
+          {isDesktopDetailOpen ? (
+            <aside className="hidden w-full max-w-[320px] xl:flex xl:min-h-0 xl:flex-col xl:border-l xl:pl-6">
+              <DocumentDetailPanel
+                restorePendingRevisionId={restorePendingRevisionId}
+                revisions={revisions}
+                onRenderOutline={(target) =>
+                  editorRef.current?.renderOutline(target)
+                }
+                onRestoreRevision={(revisionId) =>
+                  void handleRestoreRevision(revisionId)
+                }
+              />
+            </aside>
+          ) : null}
         </div>
+      </div>
 
-        {isDesktopDetailOpen ? (
-          <div className="hidden w-full max-w-[280px] xl:flex xl:min-h-0 xl:flex-col xl:border-l xl:border-black/5 xl:pl-6">
+      <Sheet open={isMobileDetailOpen} onOpenChange={setMobileDetailOpen}>
+        <SheetContent className="w-full sm:max-w-sm" side="right">
+          <SheetHeader>
+            <SheetTitle>文档详情</SheetTitle>
+            <SheetDescription>查看大纲和历史版本。</SheetDescription>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 px-4 pb-4">
             <DocumentDetailPanel
               restorePendingRevisionId={restorePendingRevisionId}
               revisions={revisions}
@@ -293,34 +337,8 @@ export function DocumentEditorShell({
               }
             />
           </div>
-        ) : null}
-      </div>
-
-      <Drawer.Backdrop
-        isOpen={isMobileDetailOpen}
-        onOpenChange={setMobileDetailOpen}
-      >
-        <Drawer.Content placement="right">
-          <Drawer.Dialog>
-            <Drawer.CloseTrigger />
-            <Drawer.Header>
-              <Drawer.Heading>文档详情</Drawer.Heading>
-            </Drawer.Header>
-            <Drawer.Body className="p-0">
-              <DocumentDetailPanel
-                restorePendingRevisionId={restorePendingRevisionId}
-                revisions={revisions}
-                onRenderOutline={(target) =>
-                  editorRef.current?.renderOutline(target)
-                }
-                onRestoreRevision={(revisionId) =>
-                  void handleRestoreRevision(revisionId)
-                }
-              />
-            </Drawer.Body>
-          </Drawer.Dialog>
-        </Drawer.Content>
-      </Drawer.Backdrop>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

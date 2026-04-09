@@ -1,15 +1,17 @@
 "use client";
 
-import {
-  Alert,
-  Button,
-  FieldError,
-  Form,
-  Input,
-  Label,
-  TextField,
-} from "@heroui/react";
+import { CircleAlertIcon } from "lucide-react";
 import { useActionState } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Field,
+  FieldContent,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { initialLoginFormState } from "@/lib/auth/forms";
 import { loginWithPasswordAction } from "../actions";
 
@@ -19,53 +21,60 @@ export function LoginForm() {
     initialLoginFormState,
   );
 
+  const emailError = state.fieldErrors.email?.[0];
+  const passwordError = state.fieldErrors.password?.[0];
+
   return (
-    <Form action={formAction} aria-label="登录表单" validationBehavior="aria">
-      <div className="space-y-4">
-        <TextField
-          autoComplete="email"
-          defaultValue={state.values.email}
-          fullWidth
-          isRequired
-          isInvalid={Boolean(state.fieldErrors.email?.[0])}
-          name="email"
-          type="email"
-          validationBehavior="aria"
-        >
-          <Label>邮箱</Label>
-          <Input placeholder="name@atlas.app" />
-          {state.fieldErrors.email?.[0] ? (
-            <FieldError>{state.fieldErrors.email[0]}</FieldError>
-          ) : null}
-        </TextField>
-        <TextField
-          autoComplete="current-password"
-          fullWidth
-          isRequired
-          isInvalid={Boolean(state.fieldErrors.password?.[0])}
-          name="password"
-          type="password"
-          validationBehavior="aria"
-        >
-          <Label>密码</Label>
-          <Input placeholder="请输入密码" />
-          {state.fieldErrors.password?.[0] ? (
-            <FieldError>{state.fieldErrors.password[0]}</FieldError>
-          ) : null}
-        </TextField>
-        {state.formError ? (
-          <Alert aria-live="polite" status="danger">
-            <Alert.Indicator />
-            <Alert.Content>
-              <Alert.Title>登录失败</Alert.Title>
-              <Alert.Description>{state.formError}</Alert.Description>
-            </Alert.Content>
-          </Alert>
-        ) : null}
-        <Button fullWidth isPending={pending} type="submit">
-          {pending ? "登录中" : "登录"}
-        </Button>
-      </div>
-    </Form>
+    <form
+      action={formAction}
+      aria-label="登录表单"
+      className="space-y-5"
+      noValidate
+    >
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor="login-email">邮箱</FieldLabel>
+          <FieldContent>
+            <Input
+              aria-invalid={Boolean(emailError)}
+              autoComplete="email"
+              defaultValue={state.values.email}
+              id="login-email"
+              name="email"
+              placeholder="name@atlas.app"
+              type="email"
+            />
+            <FieldError>{emailError}</FieldError>
+          </FieldContent>
+        </Field>
+
+        <Field>
+          <FieldLabel htmlFor="login-password">密码</FieldLabel>
+          <FieldContent>
+            <Input
+              aria-invalid={Boolean(passwordError)}
+              autoComplete="current-password"
+              id="login-password"
+              name="password"
+              placeholder="输入你的密码"
+              type="password"
+            />
+            <FieldError>{passwordError}</FieldError>
+          </FieldContent>
+        </Field>
+      </FieldGroup>
+
+      {state.formError ? (
+        <Alert variant="destructive">
+          <CircleAlertIcon className="size-4" />
+          <AlertTitle>登录失败</AlertTitle>
+          <AlertDescription>{state.formError}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      <Button className="w-full" disabled={pending} type="submit">
+        {pending ? "登录中" : "登录"}
+      </Button>
+    </form>
   );
 }

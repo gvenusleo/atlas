@@ -25,7 +25,7 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
   const initialMode = parseAuthMode(mode);
 
   return (
-    <main className="flex min-h-dvh flex-1 items-center justify-center px-4 py-10 sm:px-6">
+    <main className="flex min-h-dvh flex-1 items-center justify-center bg-muted/30 px-4 py-10 sm:px-6">
       <div className="w-full max-w-md">
         <AuthShell initialMode={initialMode} />
       </div>

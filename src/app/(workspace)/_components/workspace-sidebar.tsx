@@ -1,40 +1,92 @@
 "use client";
 
 import {
-  Alert,
-  Avatar,
-  Button,
-  Dropdown,
-  Form,
-  Input,
-  Label,
-  Modal,
-  ScrollShadow,
-  TextField,
-} from "@heroui/react";
+  ChevronRightIcon,
+  FilePlus2Icon,
+  FileTextIcon,
+  FolderIcon,
+  FolderPlusIcon,
+  LogOutIcon,
+  MoreHorizontalIcon,
+  PencilLineIcon,
+  SearchIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { logoutAction } from "@/app/auth/actions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInput,
+  SidebarMenu,
+  SidebarMenuAction,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarSeparator,
+  useSidebar,
+} from "@/components/ui/sidebar";
 import type { DocumentTreeItem } from "@/lib/documents/types";
+import { cn } from "@/lib/utils";
 import {
   createDocumentAction,
   createFolderAction,
   deleteNodeAction,
   renameNodeAction,
 } from "../actions";
-import {
-  ChevronDownIcon,
-  ChevronRightIcon,
-  FileIcon,
-  FolderIcon,
-  MoreHorizontalIcon,
-  PlusIcon,
-  SignOutIcon,
-} from "./icons";
 
 type WorkspaceSidebarProps = {
   documentTree: DocumentTreeItem[];
-  onNavigate?: () => void;
   session: {
     user: {
       email: string;
@@ -43,11 +95,6 @@ type WorkspaceSidebarProps = {
     };
   };
 };
-
-type FeedbackState = {
-  message: string;
-  status: "danger";
-} | null;
 
 type RenameDialogState = {
   id: string;
@@ -141,16 +188,15 @@ function countDocuments(items: DocumentTreeItem[]): number {
 
 export function WorkspaceSidebar({
   documentTree,
-  onNavigate,
   session,
 }: WorkspaceSidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
   const activeDocumentId = getCurrentDocumentId(pathname);
   const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(() =>
     collectExpandedFolderIds(documentTree),
   );
-  const [feedback, setFeedback] = useState<FeedbackState>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [renameDialog, setRenameDialog] = useState<RenameDialogState>(null);
   const [renameTitle, setRenameTitle] = useState("");
@@ -164,9 +210,9 @@ export function WorkspaceSidebar({
     setExpandedFolderIds(collectExpandedFolderIds(documentTree));
   }, [documentTree]);
 
-  const clearFeedback = () => {
-    if (feedback) {
-      setFeedback(null);
+  const closeMobileSidebar = () => {
+    if (isMobile) {
+      setOpenMobile(false);
     }
   };
 
@@ -174,21 +220,19 @@ export function WorkspaceSidebar({
   const documentCount = countDocuments(documentTree);
 
   const handleCreateDocument = async (parentId: string | null) => {
-    setBusyKey(`create-document:${parentId ?? "root"}`);
-    clearFeedback();
-
+    const key = `create-document:${parentId ?? "root"}`;
+    setBusyKey(key);
     const result = await createDocumentAction(parentId);
     setBusyKey(null);
 
     if (!result.ok) {
-      setFeedback({
-        message: result.message,
-        status: "danger",
+      toast.error("创建文档失败", {
+        description: result.message,
       });
       return;
     }
 
-    onNavigate?.();
+    closeMobileSidebar();
     router.push(`/documents/${result.documentId}`);
     router.refresh();
   };
@@ -198,9 +242,8 @@ export function WorkspaceSidebar({
       return;
     }
 
-    setBusyKey(`create-folder:${createFolderDialog.parentId ?? "root"}`);
-    clearFeedback();
-
+    const key = `create-folder:${createFolderDialog.parentId ?? "root"}`;
+    setBusyKey(key);
     const result = await createFolderAction(
       createFolderDialog.parentId,
       createFolderTitle,
@@ -208,9 +251,8 @@ export function WorkspaceSidebar({
     setBusyKey(null);
 
     if (!result.ok) {
-      setFeedback({
-        message: result.message,
-        status: "danger",
+      toast.error("创建文件夹失败", {
+        description: result.message,
       });
       return;
     }
@@ -235,16 +277,14 @@ export function WorkspaceSidebar({
       return;
     }
 
-    setBusyKey(`rename:${renameDialog.id}`);
-    clearFeedback();
-
+    const key = `rename:${renameDialog.id}`;
+    setBusyKey(key);
     const result = await renameNodeAction(renameDialog.id, renameTitle);
     setBusyKey(null);
 
     if (!result.ok) {
-      setFeedback({
-        message: result.message,
-        status: "danger",
+      toast.error("重命名失败", {
+        description: result.message,
       });
       return;
     }
@@ -259,16 +299,14 @@ export function WorkspaceSidebar({
       return;
     }
 
-    setBusyKey(`delete:${deleteDialog.id}`);
-    clearFeedback();
-
+    const key = `delete:${deleteDialog.id}`;
+    setBusyKey(key);
     const result = await deleteNodeAction(deleteDialog.id);
     setBusyKey(null);
 
     if (!result.ok) {
-      setFeedback({
-        message: result.message,
-        status: "danger",
+      toast.error("删除失败", {
+        description: result.message,
       });
       return;
     }
@@ -279,11 +317,23 @@ export function WorkspaceSidebar({
     setDeleteDialog(null);
 
     if (shouldRedirect) {
-      onNavigate?.();
+      closeMobileSidebar();
       router.push("/");
     }
 
     router.refresh();
+  };
+
+  const handleRenameSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    await handleRename();
+  };
+
+  const handleCreateFolderSubmit = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+    await handleCreateFolder();
   };
 
   const openCreateFolderDialog = (parentId: string | null) => {
@@ -323,7 +373,7 @@ export function WorkspaceSidebar({
     });
   };
 
-  const renderTreeItems = (items: DocumentTreeItem[], depth = 0) => {
+  const renderTreeItems = (items: DocumentTreeItem[]) => {
     return items.map((item) => {
       const isExpanded =
         item.kind === "folder"
@@ -332,213 +382,195 @@ export function WorkspaceSidebar({
             : expandedFolderIds.has(item.id)
           : false;
       const isActive = item.kind === "document" && item.id === activeDocumentId;
-      const rowPadding = {
-        paddingLeft: `${depth * 12}px`,
-      };
 
       return (
-        <div key={item.id} className="group space-y-1" style={rowPadding}>
-          <div className="flex items-center gap-1">
-            <Button
-              className="min-w-0 justify-start"
-              fullWidth
-              size="sm"
-              variant={isActive ? "secondary" : "ghost"}
-              onPress={() => {
-                if (item.kind === "folder") {
-                  toggleFolder(item.id);
-                  return;
-                }
+        <SidebarMenuItem key={item.id}>
+          <SidebarMenuButton
+            isActive={isActive}
+            tooltip={item.title}
+            onClick={() => {
+              if (item.kind === "folder") {
+                toggleFolder(item.id);
+                return;
+              }
 
-                onNavigate?.();
-                router.push(`/documents/${item.id}`);
-              }}
-            >
-              {item.kind === "folder" ? (
-                item.children.length > 0 ? (
-                  isExpanded ? (
-                    <ChevronDownIcon className="size-4 shrink-0" />
-                  ) : (
-                    <ChevronRightIcon className="size-4 shrink-0" />
-                  )
-                ) : (
-                  <span className="size-4 shrink-0" />
-                )
-              ) : null}
-              {item.kind === "folder" ? (
-                <FolderIcon className="size-4 shrink-0" />
+              closeMobileSidebar();
+              router.push(`/documents/${item.id}`);
+            }}
+          >
+            {item.kind === "folder" ? (
+              item.children.length > 0 ? (
+                <ChevronRightIcon
+                  className={cn("size-4 transition-transform", {
+                    "rotate-90": isExpanded,
+                  })}
+                />
               ) : (
-                <FileIcon className="size-4 shrink-0" />
-              )}
-              <span className="truncate">{item.title}</span>
-            </Button>
+                <span className="size-4 shrink-0" />
+              )
+            ) : null}
+            {item.kind === "folder" ? <FolderIcon /> : <FileTextIcon />}
+            <span>{item.title}</span>
+          </SidebarMenuButton>
 
-            <Dropdown>
-              <Dropdown.Trigger>
-                <Button
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <SidebarMenuAction
                   aria-label={`${item.title} 操作`}
-                  className={
-                    isActive ? "" : "opacity-0 group-hover:opacity-100"
-                  }
-                  isIconOnly
-                  size="sm"
-                  variant="tertiary"
-                >
-                  <MoreHorizontalIcon className="size-4" />
-                </Button>
-              </Dropdown.Trigger>
-              <Dropdown.Popover>
-                <Dropdown.Menu
-                  onAction={(key) => {
-                    if (key === "create-document") {
-                      void handleCreateDocument(
-                        item.kind === "folder" ? item.id : item.parentId,
-                      );
-                      return;
-                    }
+                  showOnHover
+                />
+              }
+            >
+              <MoreHorizontalIcon />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              {item.kind === "folder" ? (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => void handleCreateDocument(item.id)}
+                  >
+                    <FilePlus2Icon />
+                    <span>新建文档</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => openCreateFolderDialog(item.id)}
+                  >
+                    <FolderPlusIcon />
+                    <span>新建文件夹</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              ) : null}
+              <DropdownMenuItem onClick={() => openRenameDialog(item)}>
+                <PencilLineIcon />
+                <span>重命名</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => openDeleteDialog(item)}
+              >
+                <Trash2Icon />
+                <span>删除</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-                    if (key === "create-folder") {
-                      openCreateFolderDialog(
-                        item.kind === "folder" ? item.id : item.parentId,
-                      );
-                      return;
-                    }
-
-                    if (key === "rename") {
-                      openRenameDialog(item);
-                      return;
-                    }
-
-                    if (key === "delete") {
-                      openDeleteDialog(item);
-                    }
-                  }}
-                >
-                  {item.kind === "folder" ? (
-                    <>
-                      <Dropdown.Item id="create-document" textValue="新建文档">
-                        <Label>新建文档</Label>
-                      </Dropdown.Item>
-                      <Dropdown.Item id="create-folder" textValue="新建文件夹">
-                        <Label>新建文件夹</Label>
-                      </Dropdown.Item>
-                    </>
-                  ) : null}
-                  <Dropdown.Item id="rename" textValue="重命名">
-                    <Label>重命名</Label>
-                  </Dropdown.Item>
-                  <Dropdown.Item id="delete" textValue="删除" variant="danger">
-                    <Label>删除</Label>
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown.Popover>
-            </Dropdown>
-          </div>
-
-          {item.kind === "folder" && isExpanded && item.children.length > 0
-            ? renderTreeItems(item.children, depth + 1)
-            : null}
-        </div>
+          {item.kind === "folder" && isExpanded && item.children.length > 0 ? (
+            <SidebarMenuSub>{renderTreeItems(item.children)}</SidebarMenuSub>
+          ) : null}
+        </SidebarMenuItem>
       );
     });
   };
 
   return (
     <>
-      <div className="flex min-h-full w-full flex-col bg-surface">
-        <div className="border-b border-black/5 px-4 py-5">
-          <div className="flex items-center gap-3">
-            <Avatar color="accent" size="md" variant="soft">
-              <Avatar.Fallback>
-                {getInitials(session.user.name)}
-              </Avatar.Fallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-base font-semibold text-foreground">
-                Atlas
-              </p>
-              <p className="truncate text-sm text-muted">{session.user.name}</p>
-              <p className="truncate text-sm text-muted">
-                {session.user.email}
-              </p>
-            </div>
+      <SidebarHeader className="gap-4 border-b border-sidebar-border p-3">
+        <div className="flex items-start gap-3">
+          <Avatar size="lg">
+            <AvatarFallback>{getInitials(session.user.name)}</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <p className="truncate text-sm font-medium text-sidebar-foreground">
+              Atlas
+            </p>
+            <p className="truncate text-xs text-sidebar-foreground/70">
+              {session.user.name}
+            </p>
+            <p className="truncate text-xs text-sidebar-foreground/70">
+              {session.user.email}
+            </p>
           </div>
-          <div className="mt-4">
-            <Input
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            className="w-full"
+            disabled={busyKey === "create-document:root"}
+            size="sm"
+            onClick={() => void handleCreateDocument(null)}
+          >
+            <FilePlus2Icon data-icon="inline-start" />
+            新建文档
+          </Button>
+          <Button
+            className="w-full"
+            disabled={busyKey === "create-folder:root"}
+            size="sm"
+            variant="outline"
+            onClick={() => openCreateFolderDialog(null)}
+          >
+            <FolderPlusIcon data-icon="inline-start" />
+            新建文件夹
+          </Button>
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent className="overflow-hidden">
+        <SidebarGroup className="gap-3 p-3">
+          <SidebarGroupLabel>文档</SidebarGroupLabel>
+          <div className="relative">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-sidebar-foreground/50" />
+            <SidebarInput
               aria-label="搜索文档"
-              fullWidth
+              className="pl-8"
               placeholder="搜索文档"
               value={searchQuery}
-              variant="secondary"
               onChange={(event) => setSearchQuery(event.target.value)}
             />
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <Button
-              fullWidth
-              isPending={busyKey === "create-document:root"}
-              size="sm"
-              onPress={() => void handleCreateDocument(null)}
-            >
-              <PlusIcon className="size-4" />
-              新建文档
-            </Button>
-            <Button
-              fullWidth
-              isPending={busyKey === "create-folder:root"}
-              size="sm"
-              variant="secondary"
-              onPress={() => openCreateFolderDialog(null)}
-            >
-              <FolderIcon className="size-4" />
-              新建文件夹
-            </Button>
-          </div>
-          {feedback ? (
-            <Alert className="mt-3" status={feedback.status}>
-              <Alert.Indicator />
-              <Alert.Content>
-                <Alert.Title>操作失败</Alert.Title>
-                <Alert.Description>{feedback.message}</Alert.Description>
-              </Alert.Content>
-            </Alert>
-          ) : null}
-        </div>
+          <FieldDescription className="px-0 text-sidebar-foreground/60">
+            {searchQuery.trim()
+              ? "按标题过滤文档树"
+              : `${documentCount} 篇文档`}
+          </FieldDescription>
+        </SidebarGroup>
 
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex items-center justify-between px-4 pb-3 pt-4">
-            <p className="text-sm font-semibold text-foreground">
-              {searchQuery.trim() ? "搜索结果" : "我的文档"}
-            </p>
-            <p className="text-xs text-muted">{documentCount} 篇</p>
-          </div>
-          <ScrollShadow className="flex-1 px-4 pb-4" hideScrollBar size={36}>
-            <div className="space-y-1">
+        <SidebarSeparator />
+
+        <SidebarGroup className="min-h-0 flex-1 p-0">
+          <SidebarGroupContent className="min-h-0 flex-1">
+            <ScrollArea className="h-full px-2 pb-3">
               {filteredDocumentTree.length > 0 ? (
-                renderTreeItems(filteredDocumentTree)
+                <SidebarMenu>
+                  {renderTreeItems(filteredDocumentTree)}
+                </SidebarMenu>
               ) : (
-                <p className="px-2 py-2 text-sm text-muted">
-                  {documentTree.length === 0
-                    ? "还没有任何文档，先创建第一篇内容。"
-                    : "没有匹配的文档。"}
-                </p>
+                <Empty className="min-h-[240px] border-sidebar-border px-4">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <FolderIcon />
+                    </EmptyMedia>
+                    <EmptyTitle>
+                      {searchQuery.trim() ? "没有匹配结果" : "还没有文档"}
+                    </EmptyTitle>
+                    <EmptyDescription>
+                      {searchQuery.trim()
+                        ? "试试其他关键词"
+                        : "创建第一篇 Markdown 文档开始使用"}
+                    </EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
               )}
-            </div>
-          </ScrollShadow>
-        </div>
+            </ScrollArea>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
 
-        <div className="border-t border-black/5 p-4">
-          <form action={logoutAction}>
-            <Button fullWidth size="sm" type="submit" variant="ghost">
-              <SignOutIcon className="size-4" />
-              退出登录
-            </Button>
-          </form>
-        </div>
-      </div>
+      <SidebarSeparator />
 
-      <Modal.Backdrop
-        isOpen={Boolean(createFolderDialog)}
+      <SidebarFooter className="gap-2 p-3">
+        <form action={logoutAction}>
+          <Button className="w-full" type="submit" variant="outline">
+            <LogOutIcon data-icon="inline-start" />
+            退出登录
+          </Button>
+        </form>
+      </SidebarFooter>
+
+      <Dialog
+        open={Boolean(createFolderDialog)}
         onOpenChange={(open) => {
           if (!open) {
             setCreateFolderDialog(null);
@@ -546,36 +578,36 @@ export function WorkspaceSidebar({
           }
         }}
       >
-        <Modal.Container>
-          <Modal.Dialog className="sm:max-w-md">
-            <Modal.CloseTrigger />
-            <Modal.Header>
-              <Modal.Heading>新建文件夹</Modal.Heading>
-            </Modal.Header>
-            <Modal.Body>
-              <Form
-                aria-label="新建文件夹"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void handleCreateFolder();
-                }}
-              >
-                <TextField className="w-full" name="title">
-                  <Label>文件夹名称</Label>
-                  <Input
-                    value={createFolderTitle}
-                    onChange={(event) =>
-                      setCreateFolderTitle(event.target.value)
-                    }
-                  />
-                </TextField>
-              </Form>
-            </Modal.Body>
-            <Modal.Footer>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>新建文件夹</DialogTitle>
+            <DialogDescription>
+              文件夹只用于组织文档树，不会生成历史版本。
+            </DialogDescription>
+          </DialogHeader>
+          <form className="space-y-4" onSubmit={handleCreateFolderSubmit}>
+            <Field>
+              <FieldLabel htmlFor="create-folder-title">名称</FieldLabel>
+              <FieldContent>
+                <Input
+                  autoFocus
+                  id="create-folder-title"
+                  maxLength={120}
+                  placeholder="未命名文件夹"
+                  value={createFolderTitle}
+                  onChange={(event) => setCreateFolderTitle(event.target.value)}
+                />
+                <FieldDescription>
+                  默认会自动填充为未命名文件夹
+                </FieldDescription>
+                <FieldError />
+              </FieldContent>
+            </Field>
+            <DialogFooter>
               <Button
-                slot="close"
-                variant="secondary"
-                onPress={() => {
+                type="button"
+                variant="outline"
+                onClick={() => {
                   setCreateFolderDialog(null);
                   setCreateFolderTitle("");
                 }}
@@ -583,18 +615,21 @@ export function WorkspaceSidebar({
                 取消
               </Button>
               <Button
-                isPending={busyKey?.startsWith("create-folder:")}
-                onPress={() => void handleCreateFolder()}
+                disabled={
+                  busyKey ===
+                  `create-folder:${createFolderDialog?.parentId ?? "root"}`
+                }
+                type="submit"
               >
                 创建
               </Button>
-            </Modal.Footer>
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-      <Modal.Backdrop
-        isOpen={Boolean(renameDialog)}
+      <Dialog
+        open={Boolean(renameDialog)}
         onOpenChange={(open) => {
           if (!open) {
             setRenameDialog(null);
@@ -602,34 +637,32 @@ export function WorkspaceSidebar({
           }
         }}
       >
-        <Modal.Container>
-          <Modal.Dialog className="sm:max-w-md">
-            <Modal.CloseTrigger />
-            <Modal.Header>
-              <Modal.Heading>重命名</Modal.Heading>
-            </Modal.Header>
-            <Modal.Body>
-              <Form
-                aria-label="重命名"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void handleRename();
-                }}
-              >
-                <TextField className="w-full" name="title">
-                  <Label>名称</Label>
-                  <Input
-                    value={renameTitle}
-                    onChange={(event) => setRenameTitle(event.target.value)}
-                  />
-                </TextField>
-              </Form>
-            </Modal.Body>
-            <Modal.Footer>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>重命名</DialogTitle>
+            <DialogDescription>
+              更新当前文档或文件夹的显示名称。
+            </DialogDescription>
+          </DialogHeader>
+          <form className="space-y-4" onSubmit={handleRenameSubmit}>
+            <Field>
+              <FieldLabel htmlFor="rename-node-title">名称</FieldLabel>
+              <FieldContent>
+                <Input
+                  autoFocus
+                  id="rename-node-title"
+                  maxLength={120}
+                  value={renameTitle}
+                  onChange={(event) => setRenameTitle(event.target.value)}
+                />
+                <FieldError />
+              </FieldContent>
+            </Field>
+            <DialogFooter>
               <Button
-                slot="close"
-                variant="secondary"
-                onPress={() => {
+                type="button"
+                variant="outline"
+                onClick={() => {
                   setRenameDialog(null);
                   setRenameTitle("");
                 }}
@@ -637,55 +670,48 @@ export function WorkspaceSidebar({
                 取消
               </Button>
               <Button
-                isPending={
-                  Boolean(renameDialog) && busyKey?.startsWith("rename:")
-                }
-                onPress={() => void handleRename()}
+                disabled={busyKey === `rename:${renameDialog?.id ?? ""}`}
+                type="submit"
               >
                 保存
               </Button>
-            </Modal.Footer>
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-      <Modal.Backdrop
-        isOpen={Boolean(deleteDialog)}
+      <AlertDialog
+        open={Boolean(deleteDialog)}
         onOpenChange={(open) => {
           if (!open) {
             setDeleteDialog(null);
           }
         }}
       >
-        <Modal.Container>
-          <Modal.Dialog className="sm:max-w-md">
-            <Modal.CloseTrigger />
-            <Modal.Header>
-              <Modal.Heading>删除内容</Modal.Heading>
-            </Modal.Header>
-            <Modal.Body>
-              <p className="text-sm leading-6 text-muted">
-                将永久删除“{deleteDialog?.title ?? ""}
-                ”及其关联内容，这个操作不能撤销。
-              </p>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button slot="close" variant="secondary">
-                取消
-              </Button>
-              <Button
-                isPending={
-                  Boolean(deleteDialog) && busyKey?.startsWith("delete:")
-                }
-                variant="danger"
-                onPress={() => void handleDelete()}
-              >
-                删除
-              </Button>
-            </Modal.Footer>
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
+        <AlertDialogContent size="default">
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteDialog
+                ? `“${deleteDialog.title}”将被永久删除。`
+                : "该内容将被永久删除。"}
+              {deleteDialog?.containsActiveDocument
+                ? " 当前正在编辑的文档也会被移除。"
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={busyKey === `delete:${deleteDialog?.id ?? ""}`}
+              variant="destructive"
+              onClick={() => void handleDelete()}
+            >
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

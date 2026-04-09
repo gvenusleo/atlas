@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, Tabs } from "@heroui/react";
 import { usePathname } from "next/navigation";
 import {
   type TransitionEvent as ReactTransitionEvent,
@@ -9,6 +8,14 @@ import {
   useRef,
   useState,
 } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AuthMode } from "@/lib/auth/types";
 import { parseAuthMode } from "@/lib/auth/types";
 import { LoginForm } from "./login-form";
@@ -21,17 +28,17 @@ type AuthShellProps = {
 const modeCopy: Record<
   AuthMode,
   {
-    title: string;
     description: string;
+    title: string;
   }
 > = {
   login: {
     title: "Atlas",
-    description: "使用邮箱和密码登录你的账号",
+    description: "使用邮箱和密码继续进入你的工作台",
   },
   register: {
     title: "Atlas",
-    description: "填写以下信息以完成注册",
+    description: "创建账号后立即开始记录和整理你的 Markdown 文档",
   },
 };
 
@@ -66,8 +73,6 @@ export default function AuthShell({ initialMode }: AuthShellProps) {
     setRenderMode(initialMode);
     setTransition(null);
   }, [initialMode]);
-
-  const copy = modeCopy[selectedMode];
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -155,32 +160,30 @@ export default function AuthShell({ initialMode }: AuthShellProps) {
     });
   };
 
+  const copy = modeCopy[selectedMode];
+
   return (
     <div className="auth-card-shell">
-      <Card className="w-full">
-        <Card.Header className="gap-3">
-          <Card.Title className="text-2xl">{copy.title}</Card.Title>
-          <Card.Description>{copy.description}</Card.Description>
-        </Card.Header>
-        <Card.Content>
+      <Card className="w-full gap-0">
+        <CardHeader className="gap-3 pb-2">
+          <div className="space-y-3">
+            <CardTitle className="text-3xl sm:text-4xl">{copy.title}</CardTitle>
+            <CardDescription className="max-w-sm text-sm leading-6">
+              {copy.description}
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-1">
           <Tabs
             className="w-full"
-            selectedKey={selectedMode}
-            onSelectionChange={(key) => selectMode(parseAuthMode(String(key)))}
+            onValueChange={(value) => selectMode(parseAuthMode(String(value)))}
+            value={selectedMode}
           >
-            <Tabs.ListContainer>
-              <Tabs.List aria-label="认证模式切换">
-                <Tabs.Tab id="login">
-                  登录
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-                <Tabs.Tab id="register">
-                  注册
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-              </Tabs.List>
-            </Tabs.ListContainer>
-            <Tabs.Panel id={selectedMode} className="p-0">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login">登录</TabsTrigger>
+              <TabsTrigger value="register">注册</TabsTrigger>
+            </TabsList>
+            <TabsContent className="mt-6" value={selectedMode}>
               <div
                 ref={stageRef}
                 className={
@@ -225,9 +228,9 @@ export default function AuthShell({ initialMode }: AuthShellProps) {
                   </div>
                 )}
               </div>
-            </Tabs.Panel>
+            </TabsContent>
           </Tabs>
-        </Card.Content>
+        </CardContent>
       </Card>
     </div>
   );

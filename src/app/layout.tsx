@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
+import { RootProviders } from "@/components/root-providers";
 import "./globals.css";
 
 const inter = Inter({
@@ -29,11 +30,10 @@ export default function RootLayout({
     <html
       lang="zh-CN"
       suppressHydrationWarning
-      className={`${inter.variable} ${geistMono.variable} light default h-full`}
-      data-theme="light"
+      className={`${inter.variable} ${geistMono.variable} h-full`}
     >
-      <body className="flex min-h-full flex-col bg-background text-foreground font-sans antialiased">
-        {children}
+      <body className="flex min-h-full flex-col font-sans antialiased">
+        <RootProviders>{children}</RootProviders>
       </body>
     </html>
   );

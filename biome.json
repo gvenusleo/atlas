@@ -58,6 +58,18 @@
       "assist": {
         "enabled": false
       }
+    },
+    {
+      "includes": ["src/components/ui/**", "src/hooks/use-mobile.ts"],
+      "formatter": {
+        "enabled": false
+      },
+      "linter": {
+        "enabled": false
+      },
+      "assist": {
+        "enabled": false
+      }
     }
   ]
 }

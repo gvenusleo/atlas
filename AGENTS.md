@@ -13,14 +13,15 @@
 - Package manager and command runner: Bun only.
 - Database: PostgreSQL.
 - Vector capabilities: pgvector.
-- UI component library: HeroUI.
+- UI component library: shadcn/ui with the official `base` preset workflow.
 - Rich text / Markdown editor: Vditor.
 - Styling and formatting: Tailwind CSS v4 + Biome.
 
 ## Non-Negotiable Rules
 
 - Use Bun for dependency management and scripts. Do not use `npm`, `pnpm`, or `yarn`.
-- Use HeroUI as the primary component library. Do not introduce another general-purpose UI kit unless the user explicitly asks for it.
+- Use shadcn/ui as the primary component library. Do not introduce another general-purpose UI kit unless the user explicitly asks for it.
+- Add shadcn components through the official CLI only. Treat `components.json` as the source of truth and keep `src/components/ui/*` as generated, read-only registry code.
 - Use Vditor for rich text or Markdown editing experiences instead of adding a competing editor by default.
 - Design persistent data for PostgreSQL first, not for lowest-common-denominator database portability.
 - Build vector search and embedding-related features around pgvector unless the user explicitly decides to add a separate vector database.
@@ -31,6 +32,7 @@
 - The app uses App Router under `src/app`.
 - Prefer `@/*` imports for modules under `src/*`.
 - Shared UI should live in `src/components`.
+- Generated shadcn primitives live in `src/components/ui`; app-specific composition should live outside that folder.
 - Shared server-side capabilities, database access, retrieval logic, and AI orchestration should live in `src/lib` or clearly named domain folders.
 - Route-internal helpers may use private folders prefixed with `_`, such as `src/app/(workspace)/_components`.
 - Keep route structure aligned with Next.js file conventions. Use `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx`, and `route.ts` intentionally instead of inventing parallel conventions.
@@ -49,7 +51,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## UI and Editor Rules
 
-- Prefer HeroUI primitives and theming before building custom replacements for buttons, dialogs, form controls, lists, or navigation.
+- Prefer shadcn primitives and theme tokens before building custom replacements for buttons, dialogs, form controls, lists, or navigation.
+- Do not hand-edit generated files under `src/components/ui/*` unless the user explicitly asks to fork the registry output.
 - Keep interface decisions aligned with the product domain: dense information layouts, long-form editing, retrieval flows, and collaborative actions matter more than landing-page aesthetics.
 - Vditor is a browser-heavy editor. Integrate it in Client Components, and use dynamic loading or clear hydration boundaries when needed to avoid SSR issues.
 - Avoid large custom editor abstractions until the actual product workflow requires them. Start with a thin integration layer around Vditor.

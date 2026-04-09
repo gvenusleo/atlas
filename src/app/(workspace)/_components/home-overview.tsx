@@ -1,11 +1,20 @@
 "use client";
 
-import { Button } from "@heroui/react";
+import { Clock3Icon, FilePlus2Icon, FileTextIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import type { DocumentSummary } from "@/lib/documents/types";
 import { createDocumentAction } from "../actions";
-import { FileIcon, PlusIcon } from "./icons";
 
 type HomeOverviewProps = {
   recentDocuments: DocumentSummary[];
@@ -28,6 +37,9 @@ export function HomeOverview({ recentDocuments }: HomeOverviewProps) {
     setCreating(false);
 
     if (!result.ok) {
+      toast.error("创建文档失败", {
+        description: result.message,
+      });
       return;
     }
 
@@ -35,83 +47,95 @@ export function HomeOverview({ recentDocuments }: HomeOverviewProps) {
     router.refresh();
   };
 
-  if (recentDocuments.length === 0) {
-    return (
-      <div className="flex flex-1 items-center justify-center px-6 py-10">
-        <div className="w-full max-w-3xl space-y-6">
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-muted">个人知识空间</p>
-            <h1 className="text-3xl font-semibold text-foreground">
-              从第一篇 Markdown 开始
-            </h1>
-            <p className="max-w-2xl text-sm leading-6 text-muted">
-              这里会保存你的文档结构、编辑内容和历史快照，默认支持即时渲染、数学公式、脚注、ToC
-              与常见 Markdown 扩展。
+  return (
+    <section className="flex flex-1 flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
+      <header className="border-b pb-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="space-y-3">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              Workspace
             </p>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+                Atlas 工作台
+              </h1>
+              <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                在这里管理你的 Markdown 文档、编辑历史和即时渲染内容。
+              </p>
+            </div>
           </div>
           <Button
-            isPending={isCreating}
-            onPress={() => void handleCreateDocument()}
+            disabled={isCreating}
+            onClick={() => void handleCreateDocument()}
           >
-            <PlusIcon className="size-4" />
-            新建第一篇文档
+            <FilePlus2Icon data-icon="inline-start" />
+            {isCreating ? "创建中" : "新建文档"}
           </Button>
         </div>
-      </div>
-    );
-  }
+      </header>
 
-  return (
-    <div className="flex flex-1 flex-col px-6 py-6">
-      <div className="flex flex-col gap-4 border-b border-black/5 pb-5 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-muted">个人知识空间</p>
-          <h1 className="text-3xl font-semibold text-foreground">
-            Atlas 工作台
-          </h1>
-          <p className="text-sm text-muted">
-            从最近文档继续写作，或直接创建一篇新的 Markdown 内容。
-          </p>
-        </div>
-        <Button
-          isPending={isCreating}
-          onPress={() => void handleCreateDocument()}
-        >
-          <PlusIcon className="size-4" />
-          新建文档
-        </Button>
-      </div>
-
-      <div className="flex min-h-0 flex-1 flex-col pt-5">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">最近文档</h2>
-            <p className="text-sm text-muted">按最近编辑时间排序</p>
-          </div>
-          <p className="text-sm text-muted">{recentDocuments.length} 篇文档</p>
-        </div>
-        <div className="space-y-2">
-          {recentDocuments.map((document) => (
+      {recentDocuments.length === 0 ? (
+        <Empty className="min-h-[420px] border border-dashed bg-background px-6">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <FileTextIcon />
+            </EmptyMedia>
+            <EmptyTitle>从第一篇文档开始</EmptyTitle>
+            <EmptyDescription>
+              新建后会直接进入编辑页，并自动保存 Markdown 内容和历史快照。
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
             <Button
-              key={document.id}
-              className="min-h-[72px] justify-start"
-              fullWidth
-              variant="secondary"
-              onPress={() => router.push(`/documents/${document.id}`)}
+              disabled={isCreating}
+              onClick={() => void handleCreateDocument()}
             >
-              <FileIcon className="size-4 shrink-0" />
-              <div className="min-w-0 flex-1 text-left">
-                <p className="truncate font-medium text-foreground">
-                  {document.title}
-                </p>
-                <p className="text-sm text-muted">
-                  最近编辑于 {formatUpdatedAt(document.lastEditedAt)}
-                </p>
-              </div>
+              <FilePlus2Icon data-icon="inline-start" />
+              {isCreating ? "创建中" : "新建第一篇文档"}
             </Button>
-          ))}
+          </EmptyContent>
+        </Empty>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex items-end justify-between gap-3">
+            <div className="space-y-1">
+              <h2 className="text-lg font-medium text-foreground">最近文档</h2>
+              <p className="text-sm text-muted-foreground">
+                按最近编辑时间排序
+              </p>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {recentDocuments.length} 篇
+            </p>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+            {recentDocuments.map((document) => (
+              <Button
+                key={document.id}
+                className="h-auto min-h-28 justify-start px-4 py-4"
+                variant="outline"
+                onClick={() => router.push(`/documents/${document.id}`)}
+              >
+                <div className="flex w-full items-start gap-3 text-left">
+                  <div className="flex size-8 shrink-0 items-center justify-center border bg-muted">
+                    <FileTextIcon className="size-4" />
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {document.title}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Clock3Icon className="size-3.5" />
+                      <span>{formatUpdatedAt(document.lastEditedAt)}</span>
+                    </div>
+                  </div>
+                </div>
+              </Button>
+            ))}
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </section>
   );
 }
