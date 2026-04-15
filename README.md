@@ -1,21 +1,58 @@
-# Next.js template
+# Atlas
 
-This is a Next.js template with shadcn/ui.
+Atlas 是一个基于 Next.js 的个人知识管理与 AI 协作平台，面向知识沉淀、组织、检索、生成与协同使用场景。
 
-## Adding components
+## 项目目标
 
-To add components to your app, run the following command:
+- 建立统一的个人知识管理工作台。
+- 提供可持续演进的 AI 协作能力与内容工作流。
+- 以全栈方式打通前端体验、服务端能力与数据持久化。
+
+## 技术栈
+
+- Next.js 16
+- React 19
+- Bun
+- PostgreSQL
+- shadcn/ui
+- Tailwind CSS 4
+
+## 本地开发
+
+安装依赖：
 
 ```bash
-npx shadcn@latest add button
+bun install
 ```
 
-This will place the ui components in the `components` directory.
+启动开发环境：
 
-## Using components
-
-To use the components in your app, import them as follows:
-
-```tsx
-import { Button } from "@/components/ui/button";
+```bash
+bun run dev
 ```
+
+常用质量检查命令：
+
+```bash
+bun run lint
+bun run typecheck
+bun run build
+```
+
+## 目录概览
+
+- `app/`：应用路由、页面、布局与服务端入口。
+- `components/`：业务组件与通用组件。
+- `hooks/`：可复用交互逻辑。
+- `lib/`：工具函数与基础能力。
+- `public/`：静态资源。
+
+## 规划方向
+
+- 个人知识采集、整理、检索与沉淀。
+- AI 辅助写作、总结、问答与协作。
+- 围绕 PostgreSQL 构建稳定、可扩展的数据层能力。
+
+## 协作入口
+
+项目协作与工程约束请查看 [AGENTS.md](./AGENTS.md)。
