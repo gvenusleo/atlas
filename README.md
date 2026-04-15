@@ -39,6 +39,23 @@ bun run typecheck
 bun run build
 ```
 
+数据库与认证相关命令：
+
+```bash
+bun run auth:generate
+bun run db:generate
+bun run db:migrate
+```
+
+## 环境变量
+
+除了 `DATABASE_URL`，认证首版还需要以下变量：
+
+```bash
+BETTER_AUTH_SECRET=replace-with-a-random-secret
+BETTER_AUTH_URL=http://localhost:3000
+```
+
 ## 目录概览
 
 - `app/`：应用路由、页面、布局与服务端入口。
