@@ -1,3 +1,5 @@
+import { DocumentsEmptyState } from "@/components/documents/empty-state"
+
 export default function HomePage() {
-  return <main className="flex-1" aria-label="Atlas 首页" />
+  return <DocumentsEmptyState />
 }

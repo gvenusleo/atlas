@@ -1,7 +1,7 @@
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres"
 import { Pool } from "pg"
 
-import * as schema from "@/lib/db/schema/auth"
+import * as schema from "@/lib/db/schema"
 
 const databaseUrl = process.env.DATABASE_URL
 

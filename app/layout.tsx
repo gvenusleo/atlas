@@ -1,5 +1,10 @@
 import "./globals.css"
+import "katex/dist/katex.min.css"
+import "react-lite-youtube-embed/dist/LiteYouTubeEmbed.css"
+
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/sonner"
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 export default function RootLayout({
   children,
@@ -9,7 +14,12 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning className="antialiased">
       <body className="font-sans">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <TooltipProvider>
+            {children}
+            <Toaster />
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
