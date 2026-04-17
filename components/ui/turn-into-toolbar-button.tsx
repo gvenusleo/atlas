@@ -38,73 +38,73 @@ export const turnIntoItems = [
   {
     icon: <PilcrowIcon />,
     keywords: ["paragraph"],
-    label: "Text",
+    label: "正文",
     value: KEYS.p,
   },
   {
     icon: <Heading1Icon />,
     keywords: ["title", "h1"],
-    label: "Heading 1",
+    label: "一级标题",
     value: "h1",
   },
   {
     icon: <Heading2Icon />,
     keywords: ["subtitle", "h2"],
-    label: "Heading 2",
+    label: "二级标题",
     value: "h2",
   },
   {
     icon: <Heading3Icon />,
     keywords: ["subtitle", "h3"],
-    label: "Heading 3",
+    label: "三级标题",
     value: "h3",
   },
   {
     icon: <Heading4Icon />,
     keywords: ["subtitle", "h4"],
-    label: "Heading 4",
+    label: "四级标题",
     value: "h4",
   },
   {
     icon: <Heading5Icon />,
     keywords: ["subtitle", "h5"],
-    label: "Heading 5",
+    label: "五级标题",
     value: "h5",
   },
   {
     icon: <Heading6Icon />,
     keywords: ["subtitle", "h6"],
-    label: "Heading 6",
+    label: "六级标题",
     value: "h6",
   },
   {
     icon: <ListIcon />,
     keywords: ["unordered", "ul", "-"],
-    label: "Bulleted list",
+    label: "无序列表",
     value: KEYS.ul,
   },
   {
     icon: <ListOrderedIcon />,
     keywords: ["ordered", "ol", "1"],
-    label: "Numbered list",
+    label: "有序列表",
     value: KEYS.ol,
   },
   {
     icon: <SquareIcon />,
     keywords: ["checklist", "task", "checkbox", "[]"],
-    label: "To-do list",
+    label: "任务列表",
     value: KEYS.listTodo,
   },
   {
     icon: <FileCodeIcon />,
     keywords: ["```"],
-    label: "Code",
+    label: "代码块",
     value: KEYS.codeBlock,
   },
   {
     icon: <QuoteIcon />,
     keywords: ["citation", "blockquote", ">"],
-    label: "Quote",
+    label: "引用",
     value: KEYS.blockquote,
   },
 ]
@@ -130,7 +130,7 @@ export function TurnIntoToolbarButton(props: DropdownMenuProps) {
         <ToolbarButton
           className="min-w-[125px]"
           pressed={open}
-          tooltip="Turn into"
+          tooltip="切换样式"
           isDropdown
         >
           {selectedItem.label}
@@ -150,7 +150,7 @@ export function TurnIntoToolbarButton(props: DropdownMenuProps) {
           onValueChange={(type) => {
             setBlockType(editor, type)
           }}
-          label="Turn into"
+          label="切换样式"
         >
           {turnIntoItems.map(({ icon, label, value: itemValue }) => (
             <DropdownMenuRadioItem
