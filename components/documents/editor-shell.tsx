@@ -94,8 +94,8 @@ function EditorShellFallback({
   title,
 }: EditorShellFallbackProps) {
   return (
-    <div className="flex min-h-svh flex-col bg-background">
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur">
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background">
+      <header className="sticky top-0 z-30 shrink-0 border-b border-border/60 bg-background/90 backdrop-blur">
         <div className="flex h-14 items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <SidebarTrigger />
@@ -136,15 +136,15 @@ function EditorShellFallback({
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto">
-        <section className="mx-auto flex w-full max-w-6xl flex-col">
-          <div className="px-6 pt-10 pb-4 sm:px-10">
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <section className="mx-auto flex h-full min-h-0 w-full max-w-6xl min-w-0 flex-col overflow-hidden">
+          <div className="shrink-0 px-6 pt-10 pb-4 sm:px-10">
             <div className="font-heading text-4xl tracking-tight text-foreground">
               {title.trim() || "未命名文档"}
             </div>
           </div>
 
-          <div className="sticky top-14 z-20 border-b border-border/60 bg-background/95 px-2 py-2 backdrop-blur sm:px-4">
+          <div className="sticky top-0 z-20 shrink-0 border-b border-border/60 bg-background/95 px-2 py-2 backdrop-blur sm:px-4">
             <div className="flex flex-wrap items-center gap-2">
               <Skeleton className="h-8 w-32 rounded-md" />
               <Skeleton className="h-8 w-18 rounded-md" />
@@ -154,7 +154,7 @@ function EditorShellFallback({
             </div>
           </div>
 
-          <div className="px-6 pt-6 pb-24 sm:px-10">
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-6 pb-24 sm:px-10">
             <div className="flex flex-col gap-3">
               <Skeleton className="h-5 w-full max-w-3xl" />
               <Skeleton className="h-5 w-full max-w-[42rem]" />
@@ -347,8 +347,8 @@ export function EditorShell({ document: initialDocument }: EditorShellProps) {
   }
 
   return (
-    <div className="flex min-h-svh flex-col bg-background">
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur">
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background">
+      <header className="sticky top-0 z-30 shrink-0 border-b border-border/60 bg-background/90 backdrop-blur">
         <div className="flex h-14 items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <SidebarTrigger />
@@ -435,11 +435,11 @@ export function EditorShell({ document: initialDocument }: EditorShellProps) {
       </header>
 
       <main
-        className="flex-1 overflow-y-auto"
+        className="flex min-h-0 flex-1 flex-col overflow-hidden"
         onBlurCapture={() => void flushSave()}
       >
-        <section className="mx-auto flex w-full max-w-6xl flex-col">
-          <div className="px-6 pt-10 pb-4 sm:px-10">
+        <section className="mx-auto flex h-full min-h-0 w-full max-w-6xl min-w-0 flex-col overflow-hidden">
+          <div className="shrink-0 px-6 pt-10 pb-4 sm:px-10">
             <input
               className="w-full border-none bg-transparent font-heading text-4xl tracking-tight text-foreground outline-none placeholder:text-muted-foreground/70"
               placeholder="未命名文档"
@@ -464,8 +464,8 @@ export function EditorShell({ document: initialDocument }: EditorShellProps) {
               scheduleSave()
             }}
           >
-            <FixedToolbar className="top-14 rounded-none border-x-0 px-2 sm:px-4">
-              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1 py-1">
+            <FixedToolbar className="top-0 shrink-0 min-w-0 max-w-full rounded-none border-x-0 px-2 sm:px-4">
+              <div className="flex min-w-max flex-nowrap items-center gap-0 py-1 pr-3">
                 <ToolbarGroup>
                   <TurnIntoToolbarButton />
                 </ToolbarGroup>
@@ -557,7 +557,7 @@ export function EditorShell({ document: initialDocument }: EditorShellProps) {
               </div>
             </FixedToolbar>
 
-            <EditorContainer className="min-h-[calc(100svh-12rem)]">
+            <EditorContainer className="min-h-0 flex-1 overflow-x-hidden">
               <Editor placeholder="开始写作" />
             </EditorContainer>
 
