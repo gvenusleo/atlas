@@ -105,7 +105,7 @@ export function AppSidebar() {
               <SidebarMenuButton asChild size="lg" tooltip="Atlas">
                 <Link href="/">
                   <BookTextIcon />
-                  <span className="font-heading text-base">Atlas</span>
+                  <span className="font-brand text-base">Atlas</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

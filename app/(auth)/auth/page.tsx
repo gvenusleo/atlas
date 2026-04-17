@@ -28,7 +28,7 @@ export default async function AuthPage() {
           <section className="auth-reveal flex justify-start">
             <div className="flex max-w-2xl flex-col gap-10">
               <div className="flex flex-col gap-4">
-                <h1 className="font-heading text-6xl leading-none text-foreground sm:text-7xl lg:text-[5.5rem]">
+                <h1 className="font-brand text-6xl leading-none text-foreground sm:text-7xl lg:text-[5.5rem]">
                   Atlas
                 </h1>
                 <p className="max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
