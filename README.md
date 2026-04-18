@@ -88,22 +88,33 @@ PORT=3000
 
 ## 最小生产部署
 
-生产环境按单机 Linux、自托管、IP:Port 直连设计：
+生产环境按单机 Linux、自托管、IP:Port 直连设计，推荐使用 `systemd + bun run start`。
 
-1. 安装依赖并构建：
+1. 准备服务器环境：
 
 ```bash
-bun install
-bun run build
+curl -fsSL https://bun.sh/install | bash
+source ~/.bashrc
+bun --version
 ```
 
-2. 从模板复制生产环境变量文件：
+如果你的服务器还没有 Node.js，请额外安装 Node.js 20 LTS，因为 `next start` 运行时依赖 Node。
+
+2. 拉取代码并安装依赖：
+
+```bash
+git clone <你的仓库地址> /srv/atlas
+cd /srv/atlas
+bun install
+```
+
+3. 从模板复制生产环境变量文件：
 
 ```bash
 cp .env.example .env.production
 ```
 
-3. 按服务器实际情况修改以下关键字段：
+4. 按服务器实际情况修改以下关键字段：
 
 - `BETTER_AUTH_URL=http://<server-ip>:<port>`
 - `DATABASE_URL=<生产 PostgreSQL 连接串>`
@@ -111,16 +122,35 @@ cp .env.example .env.production
 - `HOSTNAME=0.0.0.0`
 - `PORT=<实际监听端口>`
 
-4. 启动 standalone 产物：
+5. 导入生产环境变量，执行迁移并构建：
 
 ```bash
 set -a
 source .env.production
 set +a
-NODE_ENV=production node .next/standalone/server.js
+export NODE_ENV=production
+
+bun run db:migrate
+bun run build
 ```
 
-5. 若使用 `systemd`，可直接让服务从根目录加载 `.env.production`：
+6. 手动验证启动：
+
+```bash
+NODE_ENV=production bun run start
+```
+
+确认可以通过 `http://<server-ip>:<port>` 访问后，再交给 `systemd` 托管。
+
+7. 创建 `systemd` 服务文件：
+
+先确认 Bun 的绝对路径：
+
+```bash
+which bun
+```
+
+然后创建 `/etc/systemd/system/atlas.service`：
 
 ```ini
 [Unit]
@@ -132,11 +162,51 @@ Type=simple
 WorkingDirectory=/srv/atlas
 EnvironmentFile=/srv/atlas/.env.production
 Environment=NODE_ENV=production
-ExecStart=/usr/bin/node .next/standalone/server.js
+ExecStart=/absolute/path/to/bun run start
 Restart=always
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
+```
+
+其中 `ExecStart` 需要替换成上一步 `which bun` 的输出，例如：
+
+```ini
+ExecStart=/root/.bun/bin/bun run start
+```
+
+8. 启用并启动服务：
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable atlas
+sudo systemctl start atlas
+sudo systemctl status atlas
+```
+
+9. 更新部署：
+
+```bash
+cd /srv/atlas
+git pull
+
+set -a
+source .env.production
+set +a
+export NODE_ENV=production
+
+bun install
+bun run db:migrate
+bun run build
+sudo systemctl restart atlas
+```
+
+常用排查命令：
+
+```bash
+sudo systemctl status atlas
+sudo journalctl -u atlas -n 200 --no-pager
 ```
 
 ## 目录概览
