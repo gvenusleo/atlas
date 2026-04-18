@@ -2,24 +2,21 @@ import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres"
 import { Pool } from "pg"
 
 import * as schema from "@/lib/db/schema"
-
-const databaseUrl = process.env.DATABASE_URL
-
-if (!databaseUrl) {
-  throw new Error("缺少 DATABASE_URL，无法连接 PostgreSQL。")
-}
+import { getServerEnv } from "@/lib/env/server"
 
 declare global {
   var __atlasPool: Pool | undefined
 }
 
+const serverEnv = getServerEnv()
+
 const pool =
   globalThis.__atlasPool ??
   new Pool({
-    connectionString: databaseUrl,
+    connectionString: serverEnv.databaseUrl,
   })
 
-if (process.env.NODE_ENV !== "production") {
+if (!serverEnv.isProduction) {
   globalThis.__atlasPool = pool
 }
 

@@ -1,20 +1,17 @@
-import { config } from "dotenv"
+import { loadEnvConfig } from "@next/env"
 import { defineConfig } from "drizzle-kit"
+import { getServerEnv } from "./lib/env/server"
 
-config({ path: ".env.local" })
+loadEnvConfig(process.cwd())
 
-const databaseUrl = process.env.DATABASE_URL
-
-if (!databaseUrl) {
-  throw new Error("缺少 DATABASE_URL，无法执行 Drizzle 命令。")
-}
+const serverEnv = getServerEnv()
 
 export default defineConfig({
   dialect: "postgresql",
   schema: "./lib/db/schema/*.ts",
   out: "./drizzle",
   dbCredentials: {
-    url: databaseUrl,
+    url: serverEnv.databaseUrl,
   },
   verbose: true,
   strict: true,

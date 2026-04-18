@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
+import { getServerEnv } from "@/lib/env/server"
 
 type S3Config = {
   accessKeyId: string
@@ -10,24 +11,16 @@ type S3Config = {
   secretAccessKey: string
 }
 
-function getEnv(name: keyof NodeJS.ProcessEnv) {
-  const value = process.env[name]
-
-  if (!value) {
-    throw new Error(`缺少 ${name}，无法完成对象存储上传。`)
-  }
-
-  return value
-}
-
 export function getS3Config(): S3Config {
+  const serverEnv = getServerEnv()
+
   return {
-    accessKeyId: getEnv("S3_ACCESS_KEY_ID"),
-    bucket: getEnv("S3_BUCKET"),
-    endpoint: process.env.S3_ENDPOINT,
-    publicBaseUrl: getEnv("S3_PUBLIC_BASE_URL"),
-    region: getEnv("S3_REGION"),
-    secretAccessKey: getEnv("S3_SECRET_ACCESS_KEY"),
+    accessKeyId: serverEnv.s3AccessKeyId,
+    bucket: serverEnv.s3Bucket,
+    endpoint: serverEnv.s3Endpoint,
+    publicBaseUrl: serverEnv.s3PublicBaseUrl,
+    region: serverEnv.s3Region,
+    secretAccessKey: serverEnv.s3SecretAccessKey,
   }
 }
 
