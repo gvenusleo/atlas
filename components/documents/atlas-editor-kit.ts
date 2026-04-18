@@ -42,7 +42,7 @@ import {
   UnderlinePlugin,
 } from "@platejs/basic-nodes/react"
 import { all, createLowlight } from "lowlight"
-import { KEYS } from "platejs"
+import { ExitBreakPlugin, KEYS, TrailingBlockPlugin } from "platejs"
 import { ParagraphPlugin } from "platejs/react"
 import remarkGfm from "remark-gfm"
 import remarkMath from "remark-math"
@@ -138,6 +138,12 @@ export const atlasEditorKit = [
   CodeBlockPlugin.configure({
     node: { component: CodeBlockElement },
     options: { lowlight },
+    rules: {
+      break: {
+        empty: "reset",
+        emptyLineEnd: "deleteExit",
+      },
+    },
   }),
   CodeLinePlugin.configure({
     node: { component: CodeLineElement },
@@ -208,6 +214,17 @@ export const atlasEditorKit = [
   MarkdownPlugin.configure({
     options: {
       remarkPlugins: [remarkMath, remarkGfm, remarkMdx],
+    },
+  }),
+  ExitBreakPlugin.configure({
+    shortcuts: {
+      insert: { keys: "mod+enter" },
+      insertBefore: { keys: "mod+shift+enter" },
+    },
+  }),
+  TrailingBlockPlugin.configure({
+    options: {
+      type: KEYS.p,
     },
   }),
 ]
