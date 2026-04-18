@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import {
   BookTextIcon,
-  ChevronUpIcon,
+  ChevronsUpDownIcon,
   FolderPlusIcon,
   MoonStarIcon,
   PlusIcon,
@@ -20,7 +20,6 @@ import { DocumentTree } from "@/components/document-tree/document-tree"
 import { NodeNameDialog } from "@/components/document-tree/node-name-dialog"
 import { useDocumentsWorkspace } from "@/components/documents/documents-workspace-provider"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +36,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
+  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
@@ -99,7 +99,7 @@ export function AppSidebar() {
   return (
     <>
       <Sidebar collapsible="icon" variant="inset">
-        <SidebarHeader className="gap-3 border-b border-sidebar-border/60 pb-4 group-data-[collapsible=icon]:gap-2 group-data-[collapsible=icon]:pb-3">
+        <SidebarHeader className="border-b border-sidebar-border/60 pb-3">
           <SidebarMenu className="group-data-[collapsible=icon]:hidden">
             <SidebarMenuItem>
               <SidebarMenuButton asChild size="lg" tooltip="Atlas">
@@ -110,90 +110,116 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
-
-          <div className="flex flex-col gap-2 px-2 group-data-[collapsible=icon]:px-0">
-            <Button onClick={() => void handleCreateDocument()}>
-              <PlusIcon data-icon="inline-start" />
-              <span className="group-data-[collapsible=icon]:hidden">新建文档</span>
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setCreateFolderOpen(true)
-              }}
-            >
-              <FolderPlusIcon data-icon="inline-start" />
-              <span className="group-data-[collapsible=icon]:hidden">新建文件夹</span>
-            </Button>
-          </div>
         </SidebarHeader>
 
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupLabel>文档</SidebarGroupLabel>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarGroupAction aria-label="新建">
+                  <PlusIcon />
+                </SidebarGroupAction>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-44">
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      void handleCreateDocument()
+                    }}
+                  >
+                    <PlusIcon />
+                    新建文档
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      setCreateFolderOpen(true)
+                    }}
+                  >
+                    <FolderPlusIcon />
+                    新建文件夹
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <SidebarGroupContent>
               <DocumentTree currentDocumentId={currentDocumentId} />
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
 
-        <SidebarFooter className="border-t border-sidebar-border/60 pt-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <SidebarMenuButton size="lg" tooltip="账户与设置">
-                <Avatar className="size-8">
-                  <AvatarImage alt={user.name} src={user.image ?? undefined} />
-                  <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                </Avatar>
-                <span className="truncate">{user.name}</span>
-                <ChevronUpIcon className="ml-auto group-data-[collapsible=icon]:hidden" />
-              </SidebarMenuButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" side="top">
-              <DropdownMenuLabel className="flex flex-col gap-1">
-                <span className="font-medium text-foreground">{user.name}</span>
-                <span className="text-xs text-muted-foreground">{user.email}</span>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem asChild>
-                  <Link href="/settings">
+        <SidebarFooter className="pt-2">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton
+                    className="h-auto min-h-14 gap-3 rounded-xl px-2 py-2"
+                    size="lg"
+                    tooltip="账户与设置"
+                  >
+                    <Avatar className="size-8">
+                      <AvatarImage alt={user.name} src={user.image ?? undefined} />
+                      <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                    </Avatar>
+                    <div className="grid min-w-0 flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
+                      <span className="truncate font-medium">{user.name}</span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {user.email}
+                      </span>
+                    </div>
+                    <ChevronsUpDownIcon className="ml-auto group-data-[collapsible=icon]:hidden" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" side="top">
+                  <DropdownMenuLabel className="flex flex-col gap-1">
+                    <span className="font-medium text-foreground">{user.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {user.email}
+                    </span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem asChild>
+                      <Link href="/settings">
+                        <Settings2Icon />
+                        设置
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>外观</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={theme ?? resolvedTheme ?? "system"}
+                    onValueChange={(value) => setTheme(value)}
+                  >
+                    <DropdownMenuRadioItem value="light">
+                      <SunIcon />
+                      浅色
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="dark">
+                      <MoonStarIcon />
+                      深色
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="system">
+                      <Settings2Icon />
+                      跟随系统
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    disabled={isSigningOut}
+                    onSelect={() => {
+                      void handleSignOut()
+                    }}
+                  >
                     <Settings2Icon />
-                    设置
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>外观</DropdownMenuLabel>
-              <DropdownMenuRadioGroup
-                value={theme ?? resolvedTheme ?? "system"}
-                onValueChange={(value) => setTheme(value)}
-              >
-                <DropdownMenuRadioItem value="light">
-                  <SunIcon />
-                  浅色
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="dark">
-                  <MoonStarIcon />
-                  深色
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="system">
-                  <Settings2Icon />
-                  跟随系统
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                disabled={isSigningOut}
-                onSelect={() => {
-                  void handleSignOut()
-                }}
-              >
-                <Settings2Icon />
-                {isSigningOut ? "退出中..." : "退出登录"}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                    {isSigningOut ? "退出中..." : "退出登录"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarFooter>
 
         <SidebarRail />
