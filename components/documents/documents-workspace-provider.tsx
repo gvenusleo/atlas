@@ -5,7 +5,9 @@ import * as React from "react"
 import {
   createDocument,
   createFolder,
+  moveDocument,
   moveDocumentToParent,
+  moveFolder,
   moveFolderToParent,
   renameDocument,
   renameFolder,
@@ -51,7 +53,15 @@ type DocumentsWorkspaceContextValue = {
   ) => Promise<string>
   deleteDocumentNode: (documentId: string) => Promise<void>
   deleteFolderNode: (folderId: string) => Promise<void>
+  moveDocumentNode: (
+    documentId: string,
+    targetFolderId?: string | null
+  ) => Promise<void>
   moveDocumentNodeToParent: (documentId: string) => Promise<void>
+  moveFolderNode: (
+    folderId: string,
+    targetParentFolderId?: string | null
+  ) => Promise<void>
   moveFolderNodeToParent: (folderId: string) => Promise<void>
   renameDocumentNode: (documentId: string, title: string) => Promise<void>
   renameFolderNode: (folderId: string, name: string) => Promise<void>
@@ -191,9 +201,25 @@ export function DocumentsWorkspaceProvider({
     [replaceSnapshot]
   )
 
+  const moveDocumentNode = React.useCallback(
+    async (documentId: string, targetFolderId: string | null = null) => {
+      const result = await moveDocument({ documentId, targetFolderId })
+      replaceSnapshot(result.snapshot)
+    },
+    [replaceSnapshot]
+  )
+
   const moveFolderNodeToParent = React.useCallback(
     async (folderId: string) => {
       const result = await moveFolderToParent({ folderId })
+      replaceSnapshot(result.snapshot)
+    },
+    [replaceSnapshot]
+  )
+
+  const moveFolderNode = React.useCallback(
+    async (folderId: string, targetParentFolderId: string | null = null) => {
+      const result = await moveFolder({ folderId, targetParentFolderId })
       replaceSnapshot(result.snapshot)
     },
     [replaceSnapshot]
@@ -233,7 +259,9 @@ export function DocumentsWorkspaceProvider({
       createFolderInParent,
       deleteDocumentNode,
       deleteFolderNode,
+      moveDocumentNode,
       moveDocumentNodeToParent,
+      moveFolderNode,
       moveFolderNodeToParent,
       recentDocuments,
       renameDocumentNode,
@@ -248,7 +276,9 @@ export function DocumentsWorkspaceProvider({
       createFolderInParent,
       deleteDocumentNode,
       deleteFolderNode,
+      moveDocumentNode,
       moveDocumentNodeToParent,
+      moveFolderNode,
       moveFolderNodeToParent,
       recentDocuments,
       renameDocumentNode,

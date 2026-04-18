@@ -255,3 +255,56 @@ export function findDocumentInTree(
 
   return null
 }
+
+export function findFolderInTree(
+  tree: DocumentTreeNode[],
+  folderId: string
+): DocumentTreeFolder | null {
+  for (const node of tree) {
+    if (node.type === "folder" && node.id === folderId) {
+      return node
+    }
+
+    if (node.type === "folder") {
+      const match = findFolderInTree(node.children, folderId)
+
+      if (match) {
+        return match
+      }
+    }
+  }
+
+  return null
+}
+
+export function isFolderDescendant(
+  tree: DocumentTreeNode[],
+  folderId: string,
+  candidateFolderId: string
+): boolean {
+  const folder = findFolderInTree(tree, folderId)
+
+  if (!folder) {
+    return false
+  }
+
+  const visit = (nodes: DocumentTreeNode[]): boolean => {
+    for (const node of nodes) {
+      if (node.type !== "folder") {
+        continue
+      }
+
+      if (node.id === candidateFolderId) {
+        return true
+      }
+
+      if (visit(node.children)) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  return visit(folder.children)
+}

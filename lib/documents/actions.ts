@@ -142,6 +142,63 @@ async function getNextDocumentSortIndex(
   return (sibling?.sortIndex ?? -1) + 1
 }
 
+type ActiveFolderRelation = {
+  id: string
+  parentFolderId: string | null
+}
+
+async function getActiveFolderRelations(
+  userId: string
+): Promise<ActiveFolderRelation[]> {
+  return db
+    .select({
+      id: documentFolders.id,
+      parentFolderId: documentFolders.parentFolderId,
+    })
+    .from(documentFolders)
+    .where(
+      and(
+        eq(documentFolders.ownerUserId, userId),
+        isNull(documentFolders.deletedAt)
+      )
+    )
+}
+
+function buildChildrenByParent(
+  folders: ActiveFolderRelation[]
+): Map<string | null, string[]> {
+  const childrenByParent = new Map<string | null, string[]>()
+
+  for (const folder of folders) {
+    const siblings = childrenByParent.get(folder.parentFolderId) ?? []
+    siblings.push(folder.id)
+    childrenByParent.set(folder.parentFolderId, siblings)
+  }
+
+  return childrenByParent
+}
+
+function collectNestedFolderIds(
+  startFolderId: string,
+  childrenByParent: Map<string | null, string[]>
+) {
+  const folderIds: string[] = []
+  const queue = [startFolderId]
+
+  while (queue.length > 0) {
+    const nextId = queue.shift()
+
+    if (!nextId) {
+      continue
+    }
+
+    folderIds.push(nextId)
+    queue.push(...(childrenByParent.get(nextId) ?? []))
+  }
+
+  return folderIds
+}
+
 function touchDocumentPaths(documentId?: string) {
   revalidatePath("/")
 
@@ -317,21 +374,10 @@ export async function moveDocumentToParent(input: { documentId: string }) {
   const folder = await ensureFolderOwnership(document.folderId, userId)
   const nextFolderId = folder.parentFolderId
 
-  await db
-    .update(documents)
-    .set({
-      folderId: nextFolderId,
-      sortIndex: await getNextDocumentSortIndex(userId, nextFolderId),
-    })
-    .where(eq(documents.id, input.documentId))
-
-  touchDocumentPaths(input.documentId)
-
-  return {
+  return moveDocument({
     documentId: input.documentId,
-    folderId: nextFolderId,
-    snapshot: await getWorkspaceSnapshot(userId),
-  }
+    targetFolderId: nextFolderId,
+  })
 }
 
 export async function moveFolderToParent(input: { folderId: string }) {
@@ -349,11 +395,93 @@ export async function moveFolderToParent(input: { folderId: string }) {
   })
   const nextParentFolderId = parentFolder.parentFolderId
 
+  return moveFolder({
+    folderId: input.folderId,
+    targetParentFolderId: nextParentFolderId,
+  })
+}
+
+export async function moveDocument(input: {
+  documentId: string
+  targetFolderId?: string | null
+}) {
+  const userId = await requireUserId()
+  const document = await ensureDocumentOwnership(input.documentId, userId)
+  const targetFolderId = input.targetFolderId ?? null
+
+  if (targetFolderId) {
+    await ensureFolderOwnership(targetFolderId, userId, {
+      allowRoot: true,
+    })
+  }
+
+  if (document.folderId === targetFolderId) {
+    return {
+      documentId: input.documentId,
+      folderId: targetFolderId,
+      snapshot: await getWorkspaceSnapshot(userId),
+    }
+  }
+
+  await db
+    .update(documents)
+    .set({
+      folderId: targetFolderId,
+      sortIndex: await getNextDocumentSortIndex(userId, targetFolderId),
+    })
+    .where(eq(documents.id, input.documentId))
+
+  touchDocumentPaths(input.documentId)
+
+  return {
+    documentId: input.documentId,
+    folderId: targetFolderId,
+    snapshot: await getWorkspaceSnapshot(userId),
+  }
+}
+
+export async function moveFolder(input: {
+  folderId: string
+  targetParentFolderId?: string | null
+}) {
+  const userId = await requireUserId()
+  const folder = await ensureFolderOwnership(input.folderId, userId, {
+    allowRoot: true,
+  })
+  const targetParentFolderId = input.targetParentFolderId ?? null
+
+  if (targetParentFolderId === input.folderId) {
+    throw new Error("文件夹不能移动到自身之下。")
+  }
+
+  if (targetParentFolderId) {
+    await ensureFolderOwnership(targetParentFolderId, userId, {
+      allowRoot: true,
+    })
+
+    const activeFolders = await getActiveFolderRelations(userId)
+    const nestedFolderIds = new Set(
+      collectNestedFolderIds(input.folderId, buildChildrenByParent(activeFolders))
+    )
+
+    if (nestedFolderIds.has(targetParentFolderId)) {
+      throw new Error("文件夹不能移动到自身或子文件夹之下。")
+    }
+  }
+
+  if (folder.parentFolderId === targetParentFolderId) {
+    return {
+      folderId: input.folderId,
+      parentFolderId: targetParentFolderId,
+      snapshot: await getWorkspaceSnapshot(userId),
+    }
+  }
+
   await db
     .update(documentFolders)
     .set({
-      parentFolderId: nextParentFolderId,
-      sortIndex: await getNextFolderSortIndex(userId, nextParentFolderId),
+      parentFolderId: targetParentFolderId,
+      sortIndex: await getNextFolderSortIndex(userId, targetParentFolderId),
     })
     .where(eq(documentFolders.id, input.folderId))
 
@@ -361,7 +489,7 @@ export async function moveFolderToParent(input: { folderId: string }) {
 
   return {
     folderId: input.folderId,
-    parentFolderId: nextParentFolderId,
+    parentFolderId: targetParentFolderId,
     snapshot: await getWorkspaceSnapshot(userId),
   }
 }
@@ -405,40 +533,10 @@ export async function softDeleteFolder(input: { folderId: string }) {
     allowRoot: true,
   })
 
-  const folders = await db
-    .select({
-      id: documentFolders.id,
-      parentFolderId: documentFolders.parentFolderId,
-    })
-    .from(documentFolders)
-    .where(
-      and(
-        eq(documentFolders.ownerUserId, userId),
-        isNull(documentFolders.deletedAt)
-      )
-    )
-
-  const childrenByParent = new Map<string | null, string[]>()
-
-  for (const folder of folders) {
-    const siblings = childrenByParent.get(folder.parentFolderId) ?? []
-    siblings.push(folder.id)
-    childrenByParent.set(folder.parentFolderId, siblings)
-  }
-
-  const folderIds: string[] = []
-  const queue = [input.folderId]
-
-  while (queue.length > 0) {
-    const nextId = queue.shift()
-
-    if (!nextId) {
-      continue
-    }
-
-    folderIds.push(nextId)
-    queue.push(...(childrenByParent.get(nextId) ?? []))
-  }
+  const folderIds = collectNestedFolderIds(
+    input.folderId,
+    buildChildrenByParent(await getActiveFolderRelations(userId))
+  )
 
   const relatedDocuments = await db
     .select({
