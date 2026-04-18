@@ -49,6 +49,7 @@
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
     --color-highlight: var(--highlight);
+    --color-brand: var(--brand);
 }
 
 :root {
@@ -88,6 +89,7 @@
     --atlas-glow: oklch(0.84 0.05 230);
     --atlas-orbit: oklch(0.9 0.03 115);
     --highlight: oklch(0.852 0.199 91.936);
+    --brand: oklch(0.623 0.214 259.815);
 }
 
 .dark {
@@ -126,6 +128,7 @@
     --atlas-glow: oklch(0.48 0.08 228);
     --atlas-orbit: oklch(0.42 0.03 120);
     --highlight: oklch(0.852 0.199 91.936);
+    --brand: oklch(0.707 0.165 254.624);
 }
 
 @layer base {
