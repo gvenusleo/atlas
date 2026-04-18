@@ -98,9 +98,9 @@ export function AppSidebar() {
 
   return (
     <>
-      <Sidebar collapsible="icon" variant="inset">
+      <Sidebar collapsible="offcanvas" variant="inset">
         <SidebarHeader className="border-b border-sidebar-border/60 pb-3">
-          <SidebarMenu className="group-data-[collapsible=icon]:hidden">
+          <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild size="lg" tooltip="Atlas">
                 <Link href="/">
@@ -162,13 +162,13 @@ export function AppSidebar() {
                       <AvatarImage alt={user.name} src={user.image ?? undefined} />
                       <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                     </Avatar>
-                    <div className="grid min-w-0 flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
+                    <div className="grid min-w-0 flex-1 text-left leading-tight">
                       <span className="truncate font-medium">{user.name}</span>
                       <span className="truncate text-xs text-muted-foreground">
                         {user.email}
                       </span>
                     </div>
-                    <ChevronsUpDownIcon className="ml-auto group-data-[collapsible=icon]:hidden" />
+                    <ChevronsUpDownIcon className="ml-auto" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" side="top">

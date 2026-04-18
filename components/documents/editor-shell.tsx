@@ -387,29 +387,14 @@ export function EditorShell({ document: initialDocument }: EditorShellProps) {
 
           <div className="flex shrink-0 items-center gap-2 md:gap-3">
             <EditorStatus status={saveState} />
-            <div className="hidden items-center gap-2 md:flex">
-              {saveState === "error" ? (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => void flushSave()}
-                >
-                  重试
-                </Button>
-              ) : null}
-              <Button size="sm" variant="ghost" onClick={exportMarkdown}>
-                <DownloadIcon data-icon="inline-start" />
-                <span className="hidden xl:inline">导出 Markdown</span>
-              </Button>
-            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className="md:hidden" size="icon" variant="ghost">
+                <Button size="icon" variant="ghost">
                   <MoreHorizontalIcon data-icon />
                   <span className="sr-only">更多操作</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-auto min-w-40">
                 {saveState === "error" ? (
                   <DropdownMenuItem
                     onSelect={() => {
@@ -421,6 +406,7 @@ export function EditorShell({ document: initialDocument }: EditorShellProps) {
                   </DropdownMenuItem>
                 ) : null}
                 <DropdownMenuItem
+                  className="whitespace-nowrap"
                   onSelect={() => {
                     exportMarkdown()
                   }}
